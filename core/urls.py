@@ -5,6 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.i18n import set_language
 
 try:
     from rest_framework.authtoken.views import obtain_auth_token
@@ -14,6 +15,7 @@ except:
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("admin_material.urls")),
+    path('i18n/setlang/', set_language, name='set_language'),
 ]
 
 

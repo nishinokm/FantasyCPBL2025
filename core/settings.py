@@ -27,17 +27,19 @@ DEBUG = os.environ.get("DEBUG", True)
 APP_DOMAIN = os.getenv("APP_DOMAIN", "localhost")
 
 # HOSTs List
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", APP_DOMAIN, ".deploypro.dev"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", APP_DOMAIN, "fbcpbl.kmchen12.cc"]
 
 # Add here your deployment HOSTS
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://localhost:5085",
+    "http://localhost:9453",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:5085",
+    "http://127.0.0.1:9453",
     f"http://{APP_DOMAIN}",
     f"https://{APP_DOMAIN}",
-    "https://*.deploypro.dev",
+    "https://fbcpbl.kmchen12.cc",
 ]
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
@@ -61,6 +63,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    'django.middleware.locale.LocaleMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -143,14 +146,21 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "zh-hant"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Taipei"
 
 USE_I18N = True
 
 USE_TZ = True
 
+LANGUAGES = [
+    ('zh-hant', '繁體中文'),
+    ('en', 'English'),
+]
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',  # 翻譯檔案會存放在這
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/

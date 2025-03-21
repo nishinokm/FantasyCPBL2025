@@ -24,6 +24,13 @@
 
 <br /> 
 
+## i18n
+```bash
+django-admin makemessages -l en
+django-admin compilemessages
+```
+<br /> 
+
 ## Manual Build 
 
 > Download/Clone the sources  
