@@ -25,11 +25,12 @@
             <span class="nav-link-text ms-1">{% trans "聯盟" %}</span>
           </a>
         </li>
-        <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-5">{% trans "管理者" %}</h6>
-        </li>
+        
         {% admin_get_menu as app_list %}
         {% if app_list %}
+          <li class="nav-item mt-3">
+            <h6 class="ps-4 ms-2 text-uppercase text-xs text-dark font-weight-bolder opacity-5">{% trans "管理者" %}</h6>
+          </li>
           {% for app in app_list %}
             {% if app.has_perms and not app.pinned %}
               <li class="nav-item">

@@ -78,37 +78,66 @@ def user_leagues_view(request):
         return redirect(reverse('login'))
 
     memberships = LeagueMembership.objects.filter(user=user).select_related('league')
+    joined_league_ids = memberships.values_list('league__league_id', flat=True)
+
+    # 顯示所有公開聯盟（不包含已加入的）
+    public_leagues = League.objects.filter(is_public=True).exclude(league_id__in=joined_league_ids)
     leagues = [{
         'league': m.league,
         'role': m.get_role_display(),
         'joined_at': m.joined_at
     } for m in memberships]
 
-    return render(request, 'fb_leagues/user_leagues.html', {'leagues': leagues,'segment': 'user_leagues'})
+    return render(request, 'fb_leagues/user_leagues.html', {
+        'leagues': leagues,
+        'public_leagues': public_leagues,
+        'segment': 'user_leagues'
+    })
 
 def league_detail_view(request, league_id):
     league = get_object_or_404(League, league_id=league_id)
+    user = request.user
 
-    if not league.is_public:
-        # 非公開聯盟 → 需要登入且是成員
-        if not request.user.is_authenticated:
-            return redirect(reverse('login'))  # 或顯示錯誤頁
-
-        is_member = LeagueMembership.objects.filter(user=request.user, league=league).exists()
-        if not is_member:
-            return render(request, 'fb_leagues/access_denied.html', {
-                'message': '此聯盟為非公開，僅限成員可瀏覽。'
-            })
-
-    teams = FantasyTeam.objects.filter(league=league).select_related('owner')
+    # 全部會員 & 所有隊伍一次查好
     memberships = LeagueMembership.objects.filter(league=league).select_related('user')
+    teams = FantasyTeam.objects.filter(league=league).select_related('owner')
+
+    # 預設使用者狀態
+    is_member = False
+    user_role = None
+
+    if user.is_authenticated:
+        user_membership = memberships.filter(user=user).first()
+        if user_membership:
+            is_member = True
+            user_role = user_membership.role
+
+    # 非公開聯盟檢查權限
+    if not league.is_public and not is_member:
+        if not user.is_authenticated:
+            return redirect(reverse('login'))
+        return render(request, 'fb_leagues/access_denied.html', {
+            'message': '此聯盟為非公開，僅限成員可瀏覽。'
+        })
+
+    # 根據身分顯示邀請連結
+    invite_links = {}
+    if user_role == 'viewer':
+        invite_links['viewer'] = request.build_absolute_uri(league.get_invite_url('viewer'))
+    elif user_role == 'player'or not is_member:
+        invite_links['viewer'] = request.build_absolute_uri(league.get_invite_url('viewer'))
+        invite_links['player'] = request.build_absolute_uri(league.get_invite_url('player'))
+    elif user_role in ['mod', 'owner']:
+        # 給管理員或尚未加入者看全部（讓未加入者可以取得 player 連結用於加入）
+        invite_links['mod'] = request.build_absolute_uri(league.get_invite_url('mod'))
+        invite_links['player'] = request.build_absolute_uri(league.get_invite_url('player'))
+        invite_links['viewer'] = request.build_absolute_uri(league.get_invite_url('viewer'))
+
     return render(request, 'fb_leagues/league_detail.html', {
-    'league': league,
-    'teams': teams,
-    'memberships': memberships,
-    'invite_links': {
-    'mod': request.build_absolute_uri(league.get_invite_url('mod')),
-    'player': request.build_absolute_uri(league.get_invite_url('player')),
-    'viewer': request.build_absolute_uri(league.get_invite_url('viewer')),
-    }
+        'league': league,
+        'teams': teams,
+        'memberships': memberships,
+        'invite_links': invite_links,
+        'is_member': is_member,
+        'user_role': user_role,
     })
