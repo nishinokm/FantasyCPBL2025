@@ -1,0 +1,16 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container py-5 text-center">
+  <h2 class="text-success">加入成功！</h2>
+  <p>您已成功加入聯盟：<strong>{{ league.name }}</strong></p>
+  {% if team %}
+    <p>並建立隊伍：<strong>{{ team.name }}</strong></p>
+  {% else %}
+    <p>您已成功加入為觀察者。</p>
+  {% endif %}
+  <div class="mt-4">
+    <a href="{% url 'league_detail' league.league_id %}" class="btn btn-primary">前往聯盟頁面</a>
+    <a href="{% url 'index' %}" class="btn btn-secondary">回首頁</a>
+  </div>
+</div>
+{% endblock %}

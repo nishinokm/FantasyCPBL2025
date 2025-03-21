@@ -16,6 +16,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("admin_material.urls")),
     path('i18n/setlang/', set_language, name='set_language'),
+    path('leagues/', include('fb_leagues.urls')),
 ]
 
 

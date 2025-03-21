@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid py-2">
+  <div class="row">
+    <div class="col-12">
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-0">
+          <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+            <h6 class="text-white text-capitalize ps-3">{{ request.user.username }} 加入的聯盟</h6>
+          </div>
+        </div>
+        <div class="card-body px-0 pb-2">
+          <div class="table-responsive p-0">
+            <table class="table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">聯盟名稱</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">身份</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder text-center opacity-7">加入時間</th>
+                  <th class="text-secondary opacity-7"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if leagues %}
+                  {% for item in leagues %}
+                    <tr>
+                      <td>
+                        <div class="d-flex px-2 py-1">
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">{{ item.league.name }}</h6>
+                            <p class="text-xs text-secondary mb-0">#{{ item.league.league_id }}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-xs font-weight-bold mb-0">{{ item.role }}</p>
+                        <p class="text-xs text-secondary mb-0">
+                          {% if item.role == "Owner" %}擁有者{% elif item.role == "Moderator" %}管理員{% else %}玩家{% endif %}
+                        </p>
+                      </td>
+                      <td class="align-middle text-center">
+                        <span class="text-secondary text-xs font-weight-bold">{{ item.joined_at|date:"Y/m/d H:i" }}</span>
+                      </td>
+                      <td class="align-middle text-end">
+                        <a href="{% url 'league_detail' item.league.league_id %}" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" data-original-title="View League">
+                          查看
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4">
+                      <span class="text-muted">您尚未加入任何聯盟</span>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include "includes/footer.html" %}
+</div>
+
+{% endblock content %}

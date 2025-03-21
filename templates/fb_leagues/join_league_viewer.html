@@ -1,0 +1,12 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container py-5 text-center">
+  <h3>{{ league.name }}</h3>
+  <p>這是一個非公開的聯盟，您受邀以 <strong>查看者</strong> 身份加入</p>
+  <form method="post" action="{% url 'league_invite_confirm' token %}">
+    {% csrf_token %}
+    <button class="btn btn-primary">加入</button>
+    <a href="{% url 'index' %}" class="btn btn-secondary">取消</a>
+  </form>
+</div>
+{% endblock %}

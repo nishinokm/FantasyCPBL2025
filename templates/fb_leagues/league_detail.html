@@ -1,0 +1,136 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header bg-gradient-dark text-white">
+          <h5 class="mb-0 text-white">{{ league.name }} - 聯盟詳細資料</h5>
+          <small>建立者：{{ league.created_by.username }}</small>
+        </div>
+        <div class="card-body">
+          <!-- 可折疊聯盟設定 -->
+          <button class="btn btn-sm btn-outline-dark mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#leagueConfigCollapse">
+            顯示 / 隱藏聯盟設定
+          </button>
+          <div class="collapse" id="leagueConfigCollapse">
+            <ul class="list-group mb-3 text-sm">
+              <li class="list-group-item bg-light">最大玩家數：{{ league.config.max_players }}</li>
+              <li class="list-group-item">DH：{{ league.config.dh_num }}</li>
+              <li class="list-group-item">先發投手：{{ league.config.sp_num }}</li>
+              <li class="list-group-item">後援投手：{{ league.config.rp_num }}</li>
+              <li class="list-group-item">任意投手：{{ league.config.p_num }}</li>
+              <li class="list-group-item">BN 球員：{{ league.config.bn_num }}</li>
+              <li class="list-group-item">NA 球員：{{ league.config.na_num }}</li>
+              <li class="list-group-item">農場球員：{{ league.config.farm_num }}</li>
+              <li class="list-group-item">IL60 球員：{{ league.config.il60_num }}</li>
+              <li class="list-group-item">最大球員數（總）：{{ league.config.max_rosters }}</li>
+            </ul>
+            <!-- 邀請連結 -->
+            <p class="mt-3 mb-1"><strong>邀請連結：</strong></p>
+            <ul class="text-sm">
+              {% for role, link in invite_links.items %}
+                <li class="mb-2">
+                  <strong>{{ role|capfirst }}：</strong>
+                  <span class="text-break" id="link-{{ role }}">{{ link }}</span>
+                  <button class="btn btn-sm btn-outline-secondary py-0 px-2 ms-2" onclick="copyToClipboard('link-{{ role }}', this)">複製</button>
+                </li>
+              {% endfor %}
+            </ul>
+
+            <!-- 成員列表 -->
+            <p class="mt-4"><strong>目前成員：</strong></p>
+            <ul class="list-group list-group-flush">
+              {% for m in memberships %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  {{ m.user.username }}
+                  <span class="badge bg-primary rounded-pill text-capitalize">{{ m.get_role_display }}</span>
+                </li>
+              {% empty %}
+                <li class="list-group-item text-muted">尚無成員。</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 隊伍列表 -->
+    <div class="col-12">
+      <div class="card my-4">
+        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-0">
+          <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+            <h6 class="text-white ps-3">隊伍列表</h6>
+          </div>
+        </div>
+        <div class="card-body px-0 pb-2">
+          <div class="table-responsive p-0">
+            <table class="table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">隊伍名稱</th>
+                  <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">玩家</th>
+                  <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">球員數</th>
+                  <th class="text-secondary opacity-7"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for team in teams %}
+                  <tr>
+                    <td>
+                      <h6 class="mb-0 text-sm">{{ team.name }}</h6>
+                    </td>
+                    <td>
+                      <p class="text-xs font-weight-bold mb-0">{{ team.owner.username }}</p>
+                    </td>
+                    <td class="text-center">
+                      <span class="text-xs font-weight-bold">{{ team.players.count }}</span>
+                    </td>
+                    <td class="align-middle text-end">
+                      <a href="#" class="text-secondary font-weight-bold text-xs" data-toggle="tooltip" title="查看球隊">
+                        查看
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4">
+                      <span class="text-muted">此聯盟尚無隊伍。</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+  function copyToClipboard(elementId, btn) {
+    const el = document.getElementById(elementId);
+    const text = el.textContent || el.innerText;
+
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.innerHTML;
+      btn.innerHTML = "已複製";
+      btn.classList.remove("btn-outline-secondary");
+      btn.classList.add("btn-success");
+
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.classList.add("btn-outline-secondary");
+        btn.classList.remove("btn-success");
+      }, 1500);
+    }).catch(err => {
+      alert("複製失敗：" + err);
+    });
+  }
+</script>
+
+{% endblock extra_js %}
