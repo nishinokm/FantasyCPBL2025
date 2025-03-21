@@ -1,30 +1,11 @@
-# Built with [Django App Generator](https://app-generator.dev/tools/django-generator/)
-
-Starter generated with [Django Generator](https://app-generator.dev/tools/django-generator/) (an open-source service) using **Material Design**, best practices and up-to-date Dependencies.
-In order to use the sources, follow the build instructions as presented in `Start with Docker` and `Manual Build` sections. 
-
-- [Free Support](https://app-generator.dev/ticket/create/?generated_repo=https://github.com/app-generator/django-material-1742570357) via `eMail` and `Discord`
-- **Go PRO for only $4.99/mo**. Here are the benefits:
-  - [Onboarding Kit Included](https://app-generator.dev/onboarding-kit/) - Premium Dashboards, Dynamic Django, and eCommerce CMS  
-  - **Unlock a New Premium Starter at each 4mo** (Personal License)
-  - **Premium Support** - Monday-Sunday, 3h response time. 
-  - [Django App Generator](https://app-generator.dev/tools/django-generator/) Unlimited starters, all features available.
-  - [CSV Processor](https://app-generator.dev/tools/csv-processor/) Full access (all features).
-  - [DataBase Migrator](https://app-generator.dev/tools/db-migrator/) Full access (all features).
-  - [DataBase Processor](https://app-generator.dev/tools/db-processor/) Full access (all features).
-
+# FantasyCPBL2025
 <br />
 
-## Features: 
+## 目前進度: 
 
-- `Up-to-date Dependencies`, Best practices
-- Desing: Material
-- Extended User Profile 
-- (optional) API Generator
-- (optional) Celery
-- (optional) OAuth Github, Google
-- (optional) CI/CD for Render
-- (optional) Docker
+- 用戶 User
+- CPBL球員資料 CPBL_Player
+- 聯盟 League
 
 <br />
 
@@ -43,35 +24,29 @@ In order to use the sources, follow the build instructions as presented in `Star
 
 <br /> 
 
-## [Start Project with Docker](https://app-generator.dev/docs/technologies/docker/index.html)
-
-> In case the starter was built with Docker support, here is the start up CMD:
-
-```bash
-$ docker-compose up --build
-```
-
-Once the above command is finished, the new app is started on `http://localhost:5085`
-
-<br />
-
 ## Manual Build 
 
 > Download/Clone the sources  
 
 ```bash
-$ git clone https://github.com/django-material-1742570357.git
-$ cd django-material-1742570357
+$ git clone https://github.com/nishinokm/FantasyCPBL2025.git
+$ cd FantasyCPBL2025
 ```
 
 <br />
 
-> Install modules via `VENV`  
+> Install modules via `pyenv`  
 
 ```bash
-$ virtualenv env
-$ source env/bin/activate
-$ pip install -r requirements.txt
+# windows 
+Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
+pyenv update
+pyenv install 3.11.7
+pyenv local 3.11.7
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
 <br />
