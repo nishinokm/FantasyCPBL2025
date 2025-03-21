@@ -11,9 +11,7 @@
             <small>建立者：{{ league.created_by.username }}</small>
           </div>
             {% if not is_member %}
-            <a href="{{ invite_links.player }}" class="btn btn-sm btn-success shadow-sm text-center d-flex align-items-center justify-content-center  fs-5 mb-1">
-              加入聯盟
-            </a>
+            <a href="{{ invite_links.player }}" class="btn btn-sm btn-success shadow-sm text-center d-flex align-items-center justify-content-center mb-1">加入聯盟</a>
             {% else %}
             {% if user_role == "owner" %}
               <span class="btn btn-sm btn-danger text-white shadow-sm d-flex align-items-center justify-content-center">
