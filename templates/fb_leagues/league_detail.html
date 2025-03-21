@@ -40,6 +40,7 @@
           <div class="collapse" id="leagueConfigCollapse">
             <ul class="list-group mb-3 text-sm">
               <li class="list-group-item bg-light">最大玩家數：{{ league.config.max_players }}</li>
+              <li class="list-group-item bg-light">是否已選秀：{{ league.has_draft }}</li>
               <li class="list-group-item">DH：{{ league.config.dh_num }}</li>
               <li class="list-group-item">先發投手：{{ league.config.sp_num }}</li>
               <li class="list-group-item">後援投手：{{ league.config.rp_num }}</li>
@@ -49,6 +50,8 @@
               <li class="list-group-item">農場球員：{{ league.config.farm_num }}</li>
               <li class="list-group-item">IL60 球員：{{ league.config.il60_num }}</li>
               <li class="list-group-item">最大球員數（總）：{{ league.config.max_rosters }}</li>
+              <li class="list-group-item">新人最大打席數（Batting）：{{ league.config.max_rookie_batting_apperances }}</li>
+              <li class="list-group-item">新人最大投球出局數（Innings ×3）：{{ league.config.max_rookie_pitching_innings3 }}</li>
             </ul>
             <!-- 邀請連結 -->
             <p class="mt-3 mb-1"><strong>邀請連結：</strong></p>

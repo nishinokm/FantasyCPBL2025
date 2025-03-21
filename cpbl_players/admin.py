@@ -12,9 +12,9 @@ class CPBLPlayerStatsInline(admin.StackedInline):
 class CPBLPlayerAdmin(admin.ModelAdmin):
     list_display = (
         'player_id', 'name', 'team_id', 'jersey_number',
-        'isForeign', 'main_pos', 'batting_games', 'pitching_games', 'is_injured'
+        'isForeign','isRookie','wasAbroad', 'main_pos', 'batting_games','batting_appearances', 'pitching_games','pitching_innings3', 'is_injured'
     )
-    list_filter = ('isForeign', 'is_injured', 'main_pos')
+    list_filter = ('isForeign','isRookie','wasAbroad', 'is_injured', 'main_pos')
     search_fields = ('name', 'jersey_number', 'player_id')
     ordering = ('player_id',)
     inlines = [CPBLPlayerStatsInline]

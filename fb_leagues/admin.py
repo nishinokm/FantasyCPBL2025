@@ -13,15 +13,15 @@ class LeagueConfigInline(admin.StackedInline):
 
 @admin.register(League)
 class LeagueAdmin(admin.ModelAdmin):
-    list_display = ('league_id', 'name', 'created_by', 'is_public')
-    list_filter = ('is_public',)
+    list_display = ('league_id', 'name', 'created_by', 'is_public','has_draft')
+    list_filter = ('is_public','has_draft')
     inlines = [LeagueConfigInline]
     raw_id_fields = ('created_by',)
     readonly_fields = ('invite_links', 'refresh_button')
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'created_by', 'is_public')
+            'fields': ('name', 'created_by', 'is_public', 'has_draft')
         }),
         ("邀請功能", {
             'fields': ('invite_links', 'refresh_button')

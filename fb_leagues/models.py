@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from cpbl_players.models import CPBLPlayer
 import secrets
+from django.core.exceptions import ValidationError
 
 LEAGUE_ROLE_CHOICES = [
     ('owner', 'Owner'),
@@ -22,6 +23,8 @@ class LeagueConfig(models.Model):
     na_num = models.PositiveIntegerField(default=2)   # 禁用球員
     farm_num = models.PositiveIntegerField(default=5) # 農場球員
     il60_num = models.PositiveIntegerField(default=1) # 60天傷兵
+    max_rookie_batting_apperances = models.PositiveIntegerField(default=124)
+    max_rookie_pitching_innings3 = models.PositiveIntegerField(default=120)
 
     @property
     def max_rosters(self):
@@ -40,6 +43,7 @@ class League(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_leagues')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='LeagueMembership')
     is_public = models.BooleanField(default=True, help_text="是否為公開聯盟，所有人可瀏覽")
+    has_draft = models.BooleanField(default=False, help_text="是否已經進行過選秀")
 
     invite_token_mod = models.CharField(max_length=64, blank=True)
     invite_token_player = models.CharField(max_length=64, blank=True)
@@ -80,7 +84,32 @@ class FantasyTeam(models.Model):
 
 class FantasyPlayer(models.Model):
     team = models.ForeignKey(FantasyTeam, on_delete=models.CASCADE, related_name='players')
+    league = models.ForeignKey(League, on_delete=models.CASCADE, related_name='fantasy_players')
     cpbl_player = models.ForeignKey(CPBLPlayer, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('team', 'cpbl_player')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['league', 'cpbl_player'],
+                name='unique_cpbl_player_per_league'
+            )
+        ]
+
+    def clean(self):
+        # 雙保險：檢查該聯盟中是否已有這位球員
+        if FantasyPlayer.objects.filter(
+            league=self.league,
+            cpbl_player=self.cpbl_player
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError(f"{self.cpbl_player.name} 已經被選入此聯盟中的其他隊伍。")
+
+    def save(self, *args, **kwargs):
+        # 自動同步 league（根據 team）
+        if not self.league:
+            self.league = self.team.league
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.cpbl_player.name} - {self.team.name} ({self.league.name})"
