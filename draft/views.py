@@ -115,7 +115,7 @@ def draft_snapshot(request, draft_id):
         "is_your_turn": current_unit and current_unit.new_owner.owner_id == request.user.id,
         "units": group_units_by_round(units),
         "available_players": [
-            {"id": p.id, "name": p.name} for p in available_players
+            {"id": p.id, "name": p.name, "main_pos": p.main_pos, 'team_id':p.team_id} for p in available_players
         ]
     })
 def group_units_by_round(units):
