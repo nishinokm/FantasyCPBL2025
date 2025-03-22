@@ -18,6 +18,7 @@ urlpatterns = [
     path('i18n/setlang/', set_language, name='set_language'),
     path('leagues/', include('fb_leagues.urls')),
     path('api/', include('cpbl_players.urls')),
+    path('leagues/', include('draft.urls')),
 ]
 
 

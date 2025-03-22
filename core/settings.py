@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "home",
     "cpbl_players",
     "fb_leagues",
+    'draft'
 ]
 
 REST_FRAMEWORK = {

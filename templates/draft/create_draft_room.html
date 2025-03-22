@@ -1,0 +1,20 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+
+<div class="container py-4">
+  <div class="card">
+    <div class="card-header bg-gradient-info text-white">
+      <h5 class="mb-0">建立選秀房 - {{ league.name }}</h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">建立選秀房</button>
+        <a href="{% url 'league_detail' league.league_id %}" class="btn btn-outline-secondary ms-2">取消</a>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

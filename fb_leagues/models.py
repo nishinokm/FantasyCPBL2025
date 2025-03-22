@@ -38,29 +38,34 @@ class LeagueConfig(models.Model):
         return f"Players = {self.max_players}, Config for {self.league.name} Max Rosters: {self.max_rosters}"
     
 class League(models.Model):
-    league_id = models.AutoField(primary_key=True)  # 自動遞增的唯一識別碼
+    league_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_leagues')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='LeagueMembership')
     is_public = models.BooleanField(default=True, help_text="是否為公開聯盟，所有人可瀏覽")
-    has_draft = models.BooleanField(default=False, help_text="是否已經進行過選秀")
 
     invite_token_mod = models.CharField(max_length=64, blank=True)
     invite_token_player = models.CharField(max_length=64, blank=True)
     invite_token_viewer = models.CharField(max_length=64, blank=True)
-    
+
     def __str__(self):
         return f"{'公開聯盟' if self.is_public else '未公開聯盟'} {self.name}"
+
     def generate_invite_tokens(self):
         self.invite_token_mod = secrets.token_urlsafe(24)
         self.invite_token_player = secrets.token_urlsafe(24)
         self.invite_token_viewer = secrets.token_urlsafe(24)
         self.save()
+
     def get_invite_url(self, role):
         token = getattr(self, f'invite_token_{role}', None)
         if token:
             return f"/leagues/invite/{token}/"
         return "（尚未產生）"
+
+    @property
+    def has_draft(self):
+        return hasattr(self, 'draft_room')  # ✅ 根據是否有 DraftRoom 判斷
         
 class LeagueMembership(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

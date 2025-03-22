@@ -14,7 +14,7 @@ class LeagueConfigInline(admin.StackedInline):
 @admin.register(League)
 class LeagueAdmin(admin.ModelAdmin):
     list_display = ('league_id', 'name', 'created_by', 'is_public','has_draft')
-    list_filter = ('is_public','has_draft')
+    list_filter = ('is_public',)
     inlines = [LeagueConfigInline]
     raw_id_fields = ('created_by',)
     readonly_fields = ('invite_links', 'refresh_button')

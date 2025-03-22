@@ -1,0 +1,18 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="card">
+    <div class="card-header bg-gradient-warning text-white">
+      <h5 class="mb-0"><i class="bi bi-joystick me-2"></i>{{ league.name }} - 選秀房</h5>
+      <p class="mb-0 small">選秀類型：{{ draft.get_draft_type_display }}</p>
+    </div>
+    <div class="card-body">
+      <p>目前輪數：<strong>{{ draft.current_round }}</strong></p>
+      <p>目前選秀順位：<strong>{{ draft.current_pick }}</strong></p>
+      <p>選秀狀態：{% if draft.is_complete %}<span class="text-success">已完成</span>{% else %}<span class="text-danger">進行中</span>{% endif %}</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
