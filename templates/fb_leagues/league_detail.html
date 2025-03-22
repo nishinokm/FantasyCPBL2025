@@ -1,4 +1,28 @@
 {% extends "layouts/base.html" %}
+
+{% block extrastyle %}
+<style>
+.team-badge {
+  display: inline-block;
+  padding: 12px 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  background-color: var(--bg-color, #cccccc);
+  color: var(--text-color, #000000);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.team-badge:hover {
+  transform: scale(1.05);
+}
+</style>
+{% endblock %}
+  
+{% block title %}{{ league.name }} - 聯盟詳細資料{% endblock %}
+
 {% block content %}
 
 <div class="container-fluid py-4">
@@ -105,7 +129,9 @@
                 {% for team in teams %}
                   <tr>
                     <td>
-                      <h6 class="mb-0 text-sm">{{ team.name }}</h6>
+                      <div class="team-badge" style="--bg-color: {{ team.color }}; --text-color: {{ team.text_color }};">
+                        {{ team.name }}
+                      </div>
                     </td>
                     <td>
                       <p class="text-xs font-weight-bold mb-0">{{ team.owner.username }}</p>
