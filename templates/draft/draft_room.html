@@ -11,10 +11,41 @@
     vertical-align: middle;
   }
 
-  @keyframes flash-border {
+  .draft-cell-content {
+    font-size: medium;
+    background-color: var(--bg-color, #888);
+    color: white;
+    padding: 2px;
+    border-radius: 4px;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .draft-header-badge {
+    font-size: medium;
+    background-color: var(--bg-color, #ccc);
+    color: var(--text-color, #000);
+    padding: 2px;
+    border-radius: 4px;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+  }
+
+  @keyframes rainbow-border {
     0% { border-color: red; }
-    50% { border-color: transparent; }
-    100% { border-color: red; }
+    16% { border-color: orange; }
+    33% { border-color: yellow; }
+    50% { border-color: green; }
+    66% { border-color: blue; }
+    83% { border-color: indigo; }
+    100% { border-color: violet; }
+  }
+  
+  .rainbow-flash {
+    border: 4px solid red;
+    animation: rainbow-border 1s infinite;
   }
 </style>
 {% endblock %}
@@ -109,6 +140,7 @@
       .then(data => {
         updateDraftProgress(data.units,data.current_round, data.current_pick);
         updateAvailablePlayers(data.available_players);
+        validateQueue(data.available_players);
         updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color, data.current_owner_text_color);
 
         const completeBanner = document.getElementById('draft-complete-banner');
@@ -135,7 +167,10 @@
       const firstGroupWithPick = roundGroups.find(g => g.picks[i]);
       if (firstGroupWithPick) {
         const pick = firstGroupWithPick.picks[i];
-        th.innerHTML = `<div style="background-color: ${pick.color}; color: ${pick.text_color}; border-radius: 6px; padding: 2px 4px;">${i + 1}<br>${pick.owner}</div>`;
+        th.innerHTML = `
+          <div class="draft-header-badge" style="--bg-color: ${pick.color}; --text-color: ${pick.text_color}">
+            ${i + 1}<br>${pick.owner}
+          </div>`;
       } else {
         th.textContent = i + 1;
       }
@@ -147,32 +182,40 @@
       const roundCell = document.createElement('td');
       roundCell.textContent = `第 ${group.round} 輪`;
       row.appendChild(roundCell);
-
+    
       for (let i = 0; i < maxPickCount; i++) {
         const pick = group.picks[i];
         const cell = document.createElement('td');
+    
         if (pick) {
           const name = pick.player;
           const nameWithBreak = name.match(/.{1,5}/g)?.join('<br>') || name;
           const main_pos = pick.main_pos || '';
-          const teamLogo = pick.team_id ? `<img src="${STATIC_TEAM_BASE}${pick.team_id}.png" style="width:16px;height:16px;" class="me-1">` : '';
-          cell.innerHTML = `<div style="font-size: medium;">${teamLogo} <small>${main_pos}</small><br>${nameWithBreak}</div>`;
-          cell.style.backgroundColor = pick.color;
-          cell.classList.add('text-white', 'fw-bold', 'text-center');
-
-          // Add flashing red border if it's the current pick
-          if (group.round === currentRound && i + 1 === currentPick) {
-            cell.style.animation = "flash-border 1s infinite";
-            cell.style.border = "2px solid red";
-          }
+          const teamLogo = pick.team_id
+            ? `<img src="${STATIC_TEAM_BASE}${pick.team_id}.png" style="width:16px;height:16px;" class="me-1">`
+            : '';
+    
+            const div = document.createElement('div');
+            div.className = 'draft-cell-content';
+            div.style.setProperty('--bg-color', pick.color);
+            div.innerHTML = `${teamLogo} <small>${main_pos}</small><br>${nameWithBreak}`;
+            
+            if (group.round === currentRound && i + 1 === currentPick) {
+              div.classList.add('rainbow-flash');
+            }
+            
+            cell.appendChild(div);
         } else {
           cell.textContent = '-';
           cell.classList.add('text-muted', 'text-center');
         }
+    
         row.appendChild(cell);
       }
+    
       table.appendChild(row);
-    });
+    }
+    );
   }
 
   function updateAvailablePlayers(players) {
@@ -267,6 +310,16 @@
     if (!preDraftQueue.find(p => p.id === id)) {
       preDraftQueue.push({ id, team_id, name, main_pos });
       updateQueueUI();
+    }
+  }
+
+  function validateQueue(availablePlayers) {
+    const availableIds = new Set(availablePlayers.map(p => p.id));
+    // 從後往前刪除，避免 index 錯位
+    for (let i = preDraftQueue.length - 1; i >= 0; i--) {
+      if (!availableIds.has(preDraftQueue[i].id)) {
+        removeFromQueue(i);
+      }
     }
   }
 
