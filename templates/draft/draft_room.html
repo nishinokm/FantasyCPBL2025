@@ -1,4 +1,3 @@
-<!-- draft_room.html -->
 {% extends "layouts/base.html" %}
 {% load static %}
 
@@ -10,7 +9,7 @@
       <div class="card shadow">
         <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0">選秀進度 - {{ draft.league.name }}</h5>
-          <span>目前輪次：<strong>{{ draft.current_round }}</strong>，順位：<strong>{{ draft.current_pick }}</strong></span>
+          <span id="current-status">目前輪次：<strong>{{ draft.current_round }}</strong>，順位：<strong>{{ draft.current_pick }}</strong></span>
         </div>
         <div class="card-body p-0">
           <table class="table table-striped table-hover mb-0">
@@ -25,17 +24,30 @@
             </thead>
             <tbody id="draftTable">
               {% for unit in draft_units %}
-                <tr class="text-center {% if unit.round == draft.current_round and unit.pick == draft.current_pick %}table-warning{% endif %}">
+                <tr id="unit-{{ unit.round }}-{{ unit.pick }}" class="text-center {% if unit.round == draft.current_round and unit.pick == draft.current_pick %}table-warning{% endif %}">
                   <td>{{ unit.round }}</td>
                   <td>{{ unit.pick }}</td>
                   <td>{{ unit.ori_owner.name }}</td>
-                  <td>{% if unit.player %}{{ unit.player.name }}{% else %}<em class="text-muted">尚未選擇</em>{% endif %}</td>
+                  <td class="player-cell">{% if unit.player %}{{ unit.player.name }}{% else %}<em class="text-muted">尚未選擇</em>{% endif %}</td>
                   <td>{% if unit.pick_at_time %}{{ unit.pick_at_time|date:"H:i:s" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- 預排提示區塊 -->
+      <div class="alert alert-info mt-3 d-none" id="pick-alert">
+        🎯 該你選了！請從預排球員中選擇或手動指派！
+        <form id="pick-form" class="mt-2">
+          <select id="pick-player-select" class="form-select mb-2">
+            {% for player in available_players %}
+              <option value="{{ player.id }}">{{ player.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-success">確定選擇</button>
+        </form>
       </div>
     </div>
 
@@ -45,9 +57,7 @@
         <div class="card-header bg-gradient-info text-white">
           <h6 class="mb-0">聊天室</h6>
         </div>
-        <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto;">
-          <!-- chat messages will appear here -->
-        </div>
+        <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto;"></div>
         <div class="card-footer p-2">
           <div class="input-group">
             <input type="text" id="chat-message" class="form-control" placeholder="輸入訊息...">
@@ -63,20 +73,35 @@
 {% block extra_js %}
 <script>
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const chatSocket = new WebSocket(
-    protocol + '://' + window.location.host + '/ws/draft/{{ draft.id }}/'
-  );
+  const socket = new WebSocket(protocol + '://' + window.location.host + '/ws/draft/{{ draft.id }}/');
 
-  chatSocket.onmessage = function(e) {
+  socket.onmessage = function(e) {
     const data = JSON.parse(e.data);
-    const chatBox = document.getElementById('chat-box');
-    const message = document.createElement('div');
-    message.innerHTML = `<strong>${data.user}：</strong> ${data.message}`;
-    chatBox.appendChild(message);
-    chatBox.scrollTop = chatBox.scrollHeight;
+
+    if (data.type === 'chat') {
+      const chatBox = document.getElementById('chat-box');
+      const message = document.createElement('div');
+      message.innerHTML = `<strong>${data.user}：</strong> ${data.message}`;
+      chatBox.appendChild(message);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    } else if (data.type === 'pick') {
+      const row = document.getElementById(`unit-${data.round}-${data.pick}`);
+      if (row) {
+        row.classList.remove('table-warning');
+        row.querySelector('.player-cell').innerHTML = data.player_name;
+      }
+      document.getElementById('current-status').innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>`;
+
+      // 如果輪到當前使用者操作
+      if (data.user_id === {{ request.user.id }}) {
+        document.getElementById('pick-alert').classList.remove('d-none');
+      } else {
+        document.getElementById('pick-alert').classList.add('d-none');
+      }
+    }
   };
 
-  chatSocket.onclose = function(e) {
+  socket.onclose = function(e) {
     console.error('聊天連線中斷');
   };
 
@@ -84,9 +109,16 @@
     const input = document.getElementById('chat-message');
     const message = input.value;
     if (message.trim()) {
-      chatSocket.send(JSON.stringify({ 'message': message }));
+      socket.send(JSON.stringify({ type: 'chat', message: message }));
       input.value = '';
     }
+  };
+
+  document.getElementById('pick-form').onsubmit = function(e) {
+    e.preventDefault();
+    const selected = document.getElementById('pick-player-select').value;
+    socket.send(JSON.stringify({ type: 'pick', player_id: selected }));
+    document.getElementById('pick-alert').classList.add('d-none');
   };
 </script>
 {% endblock %}
