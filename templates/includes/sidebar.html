@@ -16,13 +16,19 @@
         <li class="nav-item">
           <a class="nav-link {% if 'dashboard' == segment %} active bg-gradient-dark text-white {% else %} text-dark {% endif %}" href="{% url "index" %}">
             <i class="material-symbols-rounded opacity-5">home</i>
-            <span class="nav-link-text ms-1">{% trans "首頁" %}</span>
+            <span class="nav-link-text ms-2"> {% trans "首頁" %}</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if 'user_leagues' == segment %} active bg-gradient-dark text-white {% else %} text-dark {% endif %}" href="{% url "rules" %}">
+            <i class="material-symbols-rounded opacity-5">gavel</i>
+            <span class="nav-link-text ms-2"> {% trans "聯盟規章" %}</span>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if 'user_leagues' == segment %} active bg-gradient-dark text-white {% else %} text-dark {% endif %}" href="{% url "user_leagues" %}">
-            <i class="material-symbols-rounded opacity-5">league</i>
-            <span class="nav-link-text ms-1">{% trans "聯盟" %}</span>
+            <i class="material-symbols-rounded opacity-5">sports_baseball</i>
+            <span class="nav-link-text ms-2"> {% trans "聯盟" %}</span>
           </a>
         </li>
         

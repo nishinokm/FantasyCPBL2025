@@ -7,6 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 
+def return_rule(request):
+    return render(request, 'pages/rules.html')
+
 @csrf_exempt
 @login_required
 def update_team_color(request, league_id):
