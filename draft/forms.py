@@ -20,6 +20,12 @@ class DraftRoomCreateForm(forms.ModelForm):
         }
 
 class PreDraftPickForm(forms.ModelForm):
+    ROUND_CHOICES = [(i, f"{i} 輪") for i in range(1, 27)]
+    PICK_CHOICES = [(i, f"{i} 順位") for i in range(1, 9)]
+
+    round = forms.ChoiceField(choices=ROUND_CHOICES, label="輪數")
+    pick = forms.ChoiceField(choices=PICK_CHOICES, label="順位")
+
     class Meta:
         model = DraftUnit
         fields = ['round', 'pick', 'ori_owner', 'player']
@@ -30,7 +36,15 @@ class PreDraftPickForm(forms.ModelForm):
             'player': '選擇球員'
         }
 
-# 建立 formset（可新增/刪除）
+        widgets = {
+            'player': forms.Select(attrs={
+                'class': 'form-select select2',  # 對應 js 套件
+                'data-placeholder': '搜尋球員名稱...'
+            }),
+            'ori_owner': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+# formset 定義
 PreDraftPickFormSet = forms.modelformset_factory(
     DraftUnit,
     form=PreDraftPickForm,

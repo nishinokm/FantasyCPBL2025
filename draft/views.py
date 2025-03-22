@@ -9,8 +9,8 @@ from django.contrib import messages
 @login_required
 def create_draft_room_view(request, league_id):
     league = get_object_or_404(League, league_id=league_id)
-    membership = LeagueMembership.objects.filter(user=request.user, league=league).first()
 
+    membership = LeagueMembership.objects.filter(user=request.user, league=league).first()
     if not membership or membership.role not in ['owner', 'mod']:
         return render(request, 'fb_leagues/access_denied.html', {
             'message': '只有擁有者或管理員可以建立選秀房。'
@@ -26,9 +26,10 @@ def create_draft_room_view(request, league_id):
         form = DraftRoomCreateForm(request.POST)
         formset = PreDraftPickFormSet(request.POST, prefix='form')
         order = request.POST.getlist("draft_order")
-        if len(set(order)) != len(order) or len(order) != teams.count():
+
+        if not order or len(order) != teams.count():
             order_error = True
-            messages.error(request, "請為所有隊伍指定不重複的順位。")
+            messages.error(request, "請排序所有隊伍後再建立選秀房。")
         elif form.is_valid() and formset.is_valid():
             draft = form.save(commit=False)
             draft.league = league
@@ -56,8 +57,7 @@ def create_draft_room_view(request, league_id):
                     )
 
             messages.success(request, "選秀房與預選順位已建立成功！")
-            return redirect('draft_room', league_id=league.league_id)
-
+            return redirect('draft_room', league_id=league_id)
     else:
         form = DraftRoomCreateForm()
         formset = PreDraftPickFormSet(prefix='form', queryset=DraftUnit.objects.none())
@@ -68,9 +68,7 @@ def create_draft_room_view(request, league_id):
         'formset': formset,
         'teams': teams,
         'order_error': order_error,
-        'total_range': range(1, teams.count() + 1),
     })
-
 
 @login_required
 def draft_room_view(request, league_id):
