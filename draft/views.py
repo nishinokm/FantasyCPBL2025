@@ -31,7 +31,7 @@ def create_draft_room_view(request, league_id):
 
     if request.method == 'POST':
         form = DraftRoomCreateForm(request.POST)
-        formset = PreDraftPickFormSet(request.POST, prefix='form')
+        formset = PreDraftPickFormSet(request.POST, prefix='form',form_kwargs={'teams': teams} )
         order = request.POST.getlist("draft_order")
         swap_formset = SwapDraftPickFormSet(request.POST, prefix='swap')
 
@@ -85,7 +85,7 @@ def create_draft_room_view(request, league_id):
             return redirect('draft_room', league_id=league_id)
     else:
         form = DraftRoomCreateForm()
-        formset = PreDraftPickFormSet(prefix='form', queryset=DraftUnit.objects.none())
+        formset = PreDraftPickFormSet(prefix='form', queryset=DraftUnit.objects.none(),form_kwargs={'teams': teams} )
         swap_formset = SwapDraftPickFormSet(prefix='swap')
 
     return render(request, 'draft/create_draft_room.html', {

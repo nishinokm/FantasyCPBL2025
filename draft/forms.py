@@ -1,6 +1,6 @@
 # draft/forms.py
 from django import forms
-from .models import DraftRoom, DraftUnit, CPBLPlayer
+from .models import DraftRoom, DraftUnit, CPBLPlayer, FantasyTeam
 ROUND_CHOICES = [(i, f"{i} 輪") for i in range(1, 27)]
 PICK_CHOICES = [(i, f"{i} 順位") for i in range(1, 9)]
 class DraftRoomCreateForm(forms.ModelForm):
@@ -41,6 +41,11 @@ class PreDraftPickForm(forms.ModelForm):
             }),
             'ori_owner': forms.Select(attrs={'class': 'form-select'}),
         }
+    def __init__(self, *args, **kwargs):
+        teams = kwargs.pop('teams', None)
+        super().__init__(*args, **kwargs)
+        if teams:
+            self.fields['ori_owner'].queryset = teams
 
 # formset 定義
 PreDraftPickFormSet = forms.modelformset_factory(
