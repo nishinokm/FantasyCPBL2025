@@ -11,6 +11,7 @@ class FantasyTeamForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'color': forms.TextInput(attrs={'type': 'color'}),
+            'text_color': forms.TextInput(attrs={'type': 'color'}),
         }
 
 # 讓 LeagueConfig 在 LeagueAdmin 中直接嵌入建立
@@ -105,12 +106,21 @@ class FantasyPlayerInline(admin.TabularInline):
 @admin.register(FantasyTeam)
 class FantasyTeamAdmin(admin.ModelAdmin):
     form = FantasyTeamForm
-    list_display = ('name', 'league', 'owner', 'color_display')
+    list_display = ('name', 'league', 'owner', 'color_display', 'text_color_display')
     list_filter = ('league',)
 
     def color_display(self, obj):
-        return format_html('<div style="width: 30px; height: 20px; background-color: {};"></div>', obj.color)
+        return format_html(
+            '<div style="width: 30px; height: 20px; background-color: {}; border: 1px solid #000;"></div>',
+            obj.color
+        )
     color_display.short_description = "顏色"
+    def text_color_display(self, obj):
+        return format_html(
+            '<div style="width: 30px; height: 20px; background-color: {}; border: 1px solid #000;"></div>',
+            obj.text_color
+        )
+    text_color_display.short_description = "文字顏色"
 
 @admin.register(FantasyPlayer)
 class FantasyPlayerAdmin(admin.ModelAdmin):

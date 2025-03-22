@@ -88,7 +88,7 @@
       .then(data => {
         updateDraftProgress(data.units);
         updateAvailablePlayers(data.available_players);
-        updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color);
+        updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color, data.current_owner_text_color);
       });
   }
 
@@ -108,7 +108,7 @@
       if (firstGroupWithPick) {
         const pick = firstGroupWithPick.picks[i];
         th.innerHTML = `
-          <div style="background-color: ${pick.color}; color: white; border-radius: 6px; padding: 2px 4px;">
+          <div style="background-color: ${pick.color}; color: ${pick.text_color}; border-radius: 6px; padding: 2px 4px;">
             ${i + 1}<br>${pick.owner}
           </div>
         `;
@@ -167,10 +167,10 @@
     });
   }
 
-  function updateCurrentStatus(round, pick, isYourTurn, currentOwner = '未知', ownerColor = '#cccccc') {
+  function updateCurrentStatus(round, pick, isYourTurn, currentOwner = '未知', ownerColor = '#cccccc', text_color = '#000000') {
     const status = document.getElementById('current-status');
     status.innerHTML = `目前輪次：<strong>${round}</strong>，順位：<strong>${pick}</strong>，目前由 
-      <span style="background-color: ${ownerColor}; color: white; padding: 4px 4px; border-radius: 6px;">
+      <span style="background-color: ${ownerColor}; color: ${text_color}; padding: 4px 4px; border-radius: 6px;">
         ${currentOwner}
       </span> 選擇`;
   
