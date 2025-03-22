@@ -109,6 +109,8 @@ def draft_snapshot(request, draft_id):
     return JsonResponse({
         "current_round": draft.current_round,
         "current_pick": draft.current_pick,
+        "current_owner": current_unit.new_owner.name if current_unit else "未知",
+        "current_owner_color": current_unit.new_owner.color if current_unit else "#f0f0f0",
         "is_your_turn": current_unit and current_unit.new_owner.owner_id == request.user.id,
         "units": group_units_by_round(units),
         "available_players": [
@@ -121,7 +123,8 @@ def group_units_by_round(units):
         grouped[u.round].append({
             "player": u.player.name if u.player else "-",
             "team_id": u.player.team_id if u.player else None,
-            "color": u.new_owner.color if u.new_owner.color else "#f0f0f0"
+            "color": u.new_owner.color if u.new_owner.color else "#f0f0f0",
+            "owner": u.new_owner.name
         })
     return [{"round": r, "picks": picks} for r, picks in grouped.items()]
 

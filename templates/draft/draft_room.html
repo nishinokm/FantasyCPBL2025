@@ -88,7 +88,7 @@
       .then(data => {
         updateDraftProgress(data.units);
         updateAvailablePlayers(data.available_players);
-        updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn);
+        updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color);
       });
   }
 
@@ -102,9 +102,19 @@
     const maxPickCount = Math.max(...roundGroups.map(g => g.picks.length));
   
     // 產生順位標題欄
-    for (let i = 1; i <= maxPickCount; i++) {
+    for (let i = 0; i < maxPickCount; i++) {
       const th = document.createElement('th');
-      th.textContent = i;
+      const firstGroupWithPick = roundGroups.find(g => g.picks[i]);
+      if (firstGroupWithPick) {
+        const pick = firstGroupWithPick.picks[i];
+        th.innerHTML = `
+          <div style="background-color: ${pick.color}; color: white; border-radius: 6px; padding: 2px 4px;">
+            ${i + 1}<br>${pick.owner}
+          </div>
+        `;
+      } else {
+        th.textContent = i + 1;
+      }
       headerRow.appendChild(th);
     }
   
@@ -157,9 +167,13 @@
     });
   }
 
-  function updateCurrentStatus(round, pick, isYourTurn) {
+  function updateCurrentStatus(round, pick, isYourTurn, currentOwner = '未知', ownerColor = '#cccccc') {
     const status = document.getElementById('current-status');
-    status.innerHTML = `目前輪次：<strong>${round}</strong>，順位：<strong>${pick}</strong>`;
+    status.innerHTML = `目前輪次：<strong>${round}</strong>，順位：<strong>${pick}</strong>，目前由 
+      <span style="background-color: ${ownerColor}; color: white; padding: 4px 4px; border-radius: 6px;">
+        ${currentOwner}
+      </span> 選擇`;
+  
     const actionBlock = document.getElementById('pick-action');
     actionBlock.classList.toggle('d-none', !(isYourTurn && preDraftQueue.length > 0));
   }
