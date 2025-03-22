@@ -1,6 +1,6 @@
 # draft/forms.py
 from django import forms
-from .models import DraftRoom
+from .models import DraftRoom, DraftUnit
 
 class DraftRoomCreateForm(forms.ModelForm):
     class Meta:
@@ -18,3 +18,22 @@ class DraftRoomCreateForm(forms.ModelForm):
             'min_giveup_round': forms.NumberInput(attrs={'class': 'form-control'}),
             'top_n_round_for_draw': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+class PreDraftPickForm(forms.ModelForm):
+    class Meta:
+        model = DraftUnit
+        fields = ['round', 'pick', 'ori_owner', 'player']
+        labels = {
+            'round': '輪數',
+            'pick': '順位',
+            'ori_owner': '原始隊伍',
+            'player': '選擇球員'
+        }
+
+# 建立 formset（可新增/刪除）
+PreDraftPickFormSet = forms.modelformset_factory(
+    DraftUnit,
+    form=PreDraftPickForm,
+    extra=1,
+    can_delete=True
+)

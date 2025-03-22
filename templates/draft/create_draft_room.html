@@ -7,14 +7,135 @@
       <h5 class="mb-0">建立選秀房 - {{ league.name }}</h5>
     </div>
     <div class="card-body">
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
       <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">建立選秀房</button>
-        <a href="{% url 'league_detail' league.league_id %}" class="btn btn-outline-secondary ms-2">取消</a>
+        <div class="row">
+          {% for field in form %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}
+                <div class="text-danger small">{{ field.errors.0 }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <hr>
+        <h6 class="mt-4">1️⃣ 請調整選秀順位</h6>
+        <p class="text-muted">使用上下箭頭決定第一輪的選秀順序。</p>
+
+        <ul id="teamOrderList" class="list-group mb-4">
+          {% for team in teams %}
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-team-id="{{ team.id }}">
+              <div class="d-flex align-items-center">
+                <span class="order-number me-3 fw-bold">#{{ forloop.counter }}</span>
+                <span>{{ team.name }}</span>
+              </div>
+              <div>
+                <button type="button" class="btn btn-sm btn-outline-secondary me-1 btn-up">↑</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-down">↓</button>
+              </div>
+              <input type="hidden" name="draft_order" value="{{ team.id }}">
+            </li>
+          {% endfor %}
+        </ul>
+
+        {% if order_error %}
+          <div class="alert alert-danger">請排序所有隊伍後再提交。</div>
+        {% endif %}
+
+        <hr class="my-4">
+        <h6 class="mb-3">📝 預先建立多筆選秀順位</h6>
+        <!-- 預選順位 -->
+        <div id="formset-container">
+            {{ formset.management_form }}
+            {% for form in formset %}
+            <div class="card mb-2 predraft-form">
+                <div class="card-body row align-items-end">
+                {% for field in form.visible_fields %}
+                    <div class="col-md-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    </div>
+                {% endfor %}
+                <div class="col-md-1">
+                    <label>&nbsp;</label><br>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-form">刪除</button>
+                </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 隱藏模板 -->
+        <div id="empty-form-template" class="d-none">
+            <div class="card mb-2 predraft-form">
+            <div class="card-body row align-items-end">
+                {% for field in formset.empty_form.visible_fields %}
+                <div class="col-md-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                <div class="col-md-1">
+                <label>&nbsp;</label><br>
+                <button type="button" class="btn btn-outline-danger btn-sm remove-form">刪除</button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="add-form">➕ 新增一筆預選順位</button>
+
+        <div class="mt-3">
+          <button type="submit" class="btn btn-primary">建立選秀房 + 預選</button>
+          <a href="{% url 'league_detail' league.league_id %}" class="btn btn-outline-secondary ms-2">取消</a>
+        </div>
       </form>
     </div>
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const addFormBtn = document.getElementById('add-form');
+        const formContainer = document.getElementById('formset-container');
+        const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
+        const emptyTemplate = document.getElementById('empty-form-template').innerHTML;
+      
+        addFormBtn.addEventListener('click', () => {
+          const currentFormCount = parseInt(totalForms.value);
+          const newFormHtml = emptyTemplate.replace(/__prefix__/g, currentFormCount);
+          const temp = document.createElement('div');
+          temp.innerHTML = newFormHtml;
+          formContainer.appendChild(temp.firstElementChild);
+          totalForms.value = currentFormCount + 1;
+        });
+      
+        formContainer.addEventListener('click', function (e) {
+          if (e.target.classList.contains('remove-form')) {
+            const card = e.target.closest('.predraft-form');
+            if (card) {
+              card.remove();
+              const count = formContainer.querySelectorAll('.predraft-form').length;
+              totalForms.value = count;
+            }
+          }
+        });
+      });
+</script>
 {% endblock %}
