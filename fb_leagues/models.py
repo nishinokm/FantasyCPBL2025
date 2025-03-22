@@ -80,6 +80,7 @@ class FantasyTeam(models.Model):
     league = models.ForeignKey(League, on_delete=models.CASCADE, related_name='teams')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7, default='#000000')
 
     class Meta:
         unique_together = ('league', 'name')  # 同一聯盟中隊名不能重複

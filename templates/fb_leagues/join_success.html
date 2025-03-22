@@ -4,7 +4,13 @@
   <h2 class="text-success">加入成功！</h2>
   <p>您已成功加入聯盟：<strong>{{ league.name }}</strong></p>
   {% if team %}
-    <p>並建立隊伍：<strong>{{ team.name }}</strong></p>
+    <p>
+      並建立隊伍：
+      <strong>
+        <span style="display:inline-block; width:16px; height:16px; background-color:{{ team.color }}; border:1px solid #000; margin-right:6px; vertical-align:middle;"></span>
+        {{ team.name }}
+      </strong>
+    </p>
   {% else %}
     <p>您已成功加入為觀察者。</p>
   {% endif %}

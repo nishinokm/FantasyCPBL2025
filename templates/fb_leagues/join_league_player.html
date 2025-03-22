@@ -6,10 +6,18 @@
 
   <form method="post" action="{% url 'league_invite_confirm' token %}">
     {% csrf_token %}
+    <!-- 隊伍名稱 -->
     <div class="mb-3 col-md-6 offset-md-3 text-start">
       <label for="team_name" class="form-label">隊伍名稱</label>
       <input type="text" name="team_name" id="team_name" class="form-control border border-dark" required placeholder="輸入您的隊伍名稱">
     </div>
+
+    <!-- 隊伍顏色 -->
+    <div class="mb-3 col-md-6 offset-md-3 text-start">
+      <label for="team_color" class="form-label">隊伍顏色</label>
+      <input type="color" name="team_color" id="team_color" class="form-control form-control-color" value="#000000" title="選擇隊伍顏色">
+    </div>
+    
     <button class="btn btn-primary mt-3">加入聯盟</button>
     <a href="{% url 'index' %}" class="btn btn-secondary mt-3">取消</a>
   </form>

@@ -54,10 +54,12 @@ def confirm_join_league(request, token):
     # 建立 FantasyTeam（僅 player / mod）
     if role in ['player', 'mod']:
         team_name = request.POST.get('team_name') or f"{request.user.username} 的隊伍"
+        team_color = request.POST.get('team_color') or f"#000000"
         FantasyTeam.objects.create(
             league=league,
             owner=request.user,
-            name=team_name
+            name=team_name,
+            color=team_color
         )
     else:
         team_name = f'觀察者 {request.user.username}'

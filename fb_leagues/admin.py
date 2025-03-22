@@ -2,7 +2,16 @@ from django.contrib import admin, messages
 from django.shortcuts import redirect, get_object_or_404
 from django.utils.html import format_html
 from django.urls import path, reverse
+from django import forms
 from .models import League, LeagueConfig, LeagueMembership, FantasyTeam, FantasyPlayer
+
+class FantasyTeamForm(forms.ModelForm):
+    class Meta:
+        model = FantasyTeam
+        fields = '__all__'
+        widgets = {
+            'color': forms.TextInput(attrs={'type': 'color'}),
+        }
 
 # 讓 LeagueConfig 在 LeagueAdmin 中直接嵌入建立
 class LeagueConfigInline(admin.StackedInline):
@@ -95,9 +104,13 @@ class FantasyPlayerInline(admin.TabularInline):
 
 @admin.register(FantasyTeam)
 class FantasyTeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner', 'league')
-    inlines = [FantasyPlayerInline]
-    raw_id_fields = ('owner', 'league')
+    form = FantasyTeamForm
+    list_display = ('name', 'league', 'owner', 'color_display')
+    list_filter = ('league',)
+
+    def color_display(self, obj):
+        return format_html('<div style="width: 30px; height: 20px; background-color: {};"></div>', obj.color)
+    color_display.short_description = "顏色"
 
 @admin.register(FantasyPlayer)
 class FantasyPlayerAdmin(admin.ModelAdmin):
