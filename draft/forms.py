@@ -1,7 +1,8 @@
 # draft/forms.py
 from django import forms
-from .models import DraftRoom, DraftUnit
-
+from .models import DraftRoom, DraftUnit, CPBLPlayer
+ROUND_CHOICES = [(i, f"{i} 輪") for i in range(1, 27)]
+PICK_CHOICES = [(i, f"{i} 順位") for i in range(1, 9)]
 class DraftRoomCreateForm(forms.ModelForm):
     class Meta:
         model = DraftRoom
@@ -20,9 +21,6 @@ class DraftRoomCreateForm(forms.ModelForm):
         }
 
 class PreDraftPickForm(forms.ModelForm):
-    ROUND_CHOICES = [(i, f"{i} 輪") for i in range(1, 27)]
-    PICK_CHOICES = [(i, f"{i} 順位") for i in range(1, 9)]
-
     round = forms.ChoiceField(choices=ROUND_CHOICES, label="輪數")
     pick = forms.ChoiceField(choices=PICK_CHOICES, label="順位")
 
@@ -48,6 +46,14 @@ class PreDraftPickForm(forms.ModelForm):
 PreDraftPickFormSet = forms.modelformset_factory(
     DraftUnit,
     form=PreDraftPickForm,
-    extra=1,
+    extra=0,
     can_delete=True
 )
+
+class SwapDraftUnitOwnerForm(forms.Form):
+    round_a = forms.ChoiceField(choices=ROUND_CHOICES, label="輪次 A")
+    pick_a = forms.ChoiceField(choices=PICK_CHOICES, label="順位 A")
+    round_b = forms.ChoiceField(choices=ROUND_CHOICES, label="輪次 B")
+    pick_b = forms.ChoiceField(choices=PICK_CHOICES, label="順位 B")
+
+SwapDraftPickFormSet = forms.formset_factory(SwapDraftUnitOwnerForm, extra=0, can_delete=True)

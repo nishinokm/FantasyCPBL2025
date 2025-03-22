@@ -99,6 +99,50 @@
 
         <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="add-form">➕ 新增一筆預選順位</button>
 
+        <h6 class="mt-4">2️⃣ 設定交換順位</h6>
+        <p class="text-muted">選擇要交換順位的球員與位置：</p>
+
+        <div id="swap-formset-container">
+          {{ swap_formset.management_form }}  <!-- ✅ 這行非常重要！ -->
+
+          {% for form in swap_formset %}
+            <div class="card mb-2 swap-form">
+              <div class="card-body row">
+                {% for field in form.visible_fields %}
+                  <div class="col-md-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                  </div>
+                {% endfor %}
+                <div class="col-md-1">
+                  <label>&nbsp;</label><br>
+                  <button type="button" class="btn btn-outline-danger btn-sm remove-swap-form">刪除</button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- 用來新增用空表單模板 -->
+        <div id="empty-swap-form-template" class="d-none">
+          <div class="card mb-2 swap-form">
+            <div class="card-body row">
+              {% for field in swap_formset.empty_form.visible_fields %}
+                <div class="col-md-3">
+                  <label class="form-label">{{ field.label }}</label>
+                  {{ field }}
+                </div>
+              {% endfor %}
+              <div class="col-md-1">
+                <label>&nbsp;</label><br>
+                <button type="button" class="btn btn-outline-danger btn-sm remove-swap-form">刪除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-outline-info btn-sm mb-3" id="add-swap-form">➕ 新增一筆交換順位</button>
+
         <div class="mt-3">
           <button type="submit" class="btn btn-primary">建立選秀房 + 預選</button>
           <a href="{% url 'league_detail' league.league_id %}" class="btn btn-outline-secondary ms-2">取消</a>
@@ -171,6 +215,30 @@
           card.remove();
           const count = formContainer.querySelectorAll('.predraft-form').length;
           totalForms.value = count;
+        }
+      }
+    });
+
+    const swapContainer = document.getElementById('swap-formset-container');
+    const swapTotalForms = document.querySelector('#id_swap-TOTAL_FORMS');
+    const emptySwapTemplate = document.getElementById('empty-swap-form-template').innerHTML;
+
+    document.getElementById('add-swap-form').addEventListener('click', () => {
+      const current = parseInt(swapTotalForms.value);
+      const html = emptySwapTemplate.replace(/__prefix__/g, current);
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      swapContainer.appendChild(temp.firstElementChild);
+      swapTotalForms.value = current + 1;
+    });
+
+    swapContainer.addEventListener('click', function (e) {
+      if (e.target.classList.contains('remove-swap-form')) {
+        const card = e.target.closest('.swap-form');
+        if (card) {
+          card.remove();
+          const count = swapContainer.querySelectorAll('.swap-form').length;
+          swapTotalForms.value = count;
         }
       }
     });

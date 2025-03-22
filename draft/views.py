@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from fb_leagues.models import League, LeagueMembership, FantasyTeam
 from .models import DraftRoom, DraftUnit
-from .forms import DraftRoomCreateForm, PreDraftPickFormSet
+from .forms import DraftRoomCreateForm, PreDraftPickFormSet, SwapDraftPickFormSet
 from cpbl_players.models import CPBLPlayer
 import json
 from collections import defaultdict
@@ -33,11 +33,12 @@ def create_draft_room_view(request, league_id):
         form = DraftRoomCreateForm(request.POST)
         formset = PreDraftPickFormSet(request.POST, prefix='form')
         order = request.POST.getlist("draft_order")
+        swap_formset = SwapDraftPickFormSet(request.POST, prefix='swap')
 
         if not order or len(order) != teams.count():
             order_error = True
             messages.error(request, "請排序所有隊伍後再建立選秀房。")
-        elif form.is_valid() and formset.is_valid():
+        elif form.is_valid() and formset.is_valid() and swap_formset.is_valid():
             draft = form.save(commit=False)
             draft.league = league
             draft.save()
@@ -63,16 +64,35 @@ def create_draft_room_view(request, league_id):
                         new_owner=team
                     )
 
-            messages.success(request, "選秀房與預選順位已建立成功！")
+            for swap in swap_formset.cleaned_data:
+                if not swap or swap.get('DELETE'):
+                    continue
+                
+                round_a = swap['round_a']
+                pick_a = swap['pick_a']
+                round_b = swap['round_b']
+                pick_b = swap['pick_b']
+
+                unit_a = DraftUnit.objects.filter(draft=draft,round=round_a, pick=pick_a).first()
+                unit_b = DraftUnit.objects.filter(draft=draft,round=round_b, pick=pick_b).first()
+
+                if unit_a and unit_b:
+                    unit_a.new_owner, unit_b.new_owner = unit_b.ori_owner, unit_a.ori_owner
+                    unit_a.save()
+                    unit_b.save()
+
+            messages.success(request, "選秀房與交換順位已建立")
             return redirect('draft_room', league_id=league_id)
     else:
         form = DraftRoomCreateForm()
         formset = PreDraftPickFormSet(prefix='form', queryset=DraftUnit.objects.none())
+        swap_formset = SwapDraftPickFormSet(prefix='swap')
 
     return render(request, 'draft/create_draft_room.html', {
         'league': league,
         'form': form,
         'formset': formset,
+        'swap_formset': swap_formset,
         'teams': teams,
         'order_error': order_error,
     })
