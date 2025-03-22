@@ -11,6 +11,7 @@ from .models import DraftRoom, DraftUnit
 from .forms import DraftRoomCreateForm, PreDraftPickFormSet
 from cpbl_players.models import CPBLPlayer
 import json
+from collections import defaultdict
 
 @login_required
 def create_draft_room_view(request, league_id):
@@ -104,25 +105,25 @@ def draft_snapshot(request, draft_id):
         round=draft.current_round,
         pick=draft.current_pick
     ).select_related('new_owner__owner').first()
-
+    
     return JsonResponse({
         "current_round": draft.current_round,
         "current_pick": draft.current_pick,
         "is_your_turn": current_unit and current_unit.new_owner.owner_id == request.user.id,
-        "units": [
-            {
-                "round": u.round,
-                "pick": u.pick,
-                "ori_owner": u.ori_owner.name,
-                "new_owner": u.new_owner.name,
-                "player": u.player.name if u.player else None,
-                "pick_time": u.pick_at_time.strftime('%H:%M:%S') if u.pick_at_time else None
-            } for u in units
-        ],
+        "units": group_units_by_round(units),
         "available_players": [
             {"id": p.id, "name": p.name} for p in available_players
         ]
     })
+def group_units_by_round(units):
+    grouped = defaultdict(list)
+    for u in units:
+        grouped[u.round].append({
+            "player": u.player.name if u.player else "-",
+            "team_id": u.player.team_id if u.player else None,
+            "color": u.new_owner.color if u.new_owner.color else "#f0f0f0"
+        })
+    return [{"round": r, "picks": picks} for r, picks in grouped.items()]
 
 @csrf_exempt
 @require_POST
