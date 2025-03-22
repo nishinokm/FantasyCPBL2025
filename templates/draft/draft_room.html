@@ -85,14 +85,29 @@
       chatBox.appendChild(message);
       chatBox.scrollTop = chatBox.scrollHeight;
     } else if (data.type === 'pick') {
-      const row = document.getElementById(`unit-${data.round}-${data.pick}`);
-      if (row) {
-        row.classList.remove('table-warning');
-        row.querySelector('.player-cell').innerHTML = data.player_name;
-      }
-      document.getElementById('current-status').innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>`;
-
-      // 如果輪到當前使用者操作
+      const tableBody = document.getElementById('draftTable');
+      tableBody.innerHTML = ''; // 清空原本表格
+    
+      data.draft_units.forEach(unit => {
+        const row = document.createElement('tr');
+        row.classList.add('text-center');
+        if (unit.round === data.current_round && unit.pick === data.current_pick) {
+          row.classList.add('table-warning');
+        }
+        row.id = `unit-${unit.round}-${unit.pick}`;
+        row.innerHTML = `
+          <td>${unit.round}</td>
+          <td>${unit.pick}</td>
+          <td>${unit.ori_owner}</td>
+          <td class="player-cell">${unit.player || '<em class="text-muted">尚未選擇</em>'}</td>
+          <td>${unit.pick_time}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    
+      const currentStatusEl = document.getElementById('current-status');
+      currentStatusEl.innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>`;
+    
       if (data.user_id === {{ request.user.id }}) {
         document.getElementById('pick-alert').classList.remove('d-none');
       } else {
@@ -100,7 +115,6 @@
       }
     }
   };
-
   socket.onclose = function(e) {
     console.error('聊天連線中斷');
   };
@@ -120,5 +134,20 @@
     socket.send(JSON.stringify({ type: 'pick', player_id: selected }));
     document.getElementById('pick-alert').classList.add('d-none');
   };
+  // 每 10 秒檢查選秀進度，補強 WebSocket 中斷或延遲
+  setInterval(() => {
+    fetch("{% url 'draft_status' draft.id %}")
+      .then(response => response.json())
+      .then(data => {
+        const currentStatusEl = document.getElementById('current-status');
+        currentStatusEl.innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>，由 <strong>${data.current_owner}</strong> 選擇`;
+        console.log("Current Status:", currentStatusEl.innerHTML);
+        if (data.is_your_turn) {
+          document.getElementById('pick-alert').classList.remove('d-none');
+        } else {
+          document.getElementById('pick-alert').classList.add('d-none');
+        }
+      });
+  }, 10000);
 </script>
 {% endblock %}

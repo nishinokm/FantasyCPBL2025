@@ -3,17 +3,17 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+from django.utils.timezone import now
+
 from .models import DraftRoom, DraftUnit
 from cpbl_players.models import CPBLPlayer
-from fb_leagues.models import FantasyTeam
-from django.utils.timezone import now
 
 class DraftConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.draft_id = self.scope['url_route']['kwargs']['draft_id']
         self.group_name = f'draft_{self.draft_id}'
-
         self.user = self.scope["user"]
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
@@ -44,30 +44,27 @@ class DraftConsumer(AsyncWebsocketConsumer):
         player = await database_sync_to_async(self.get_player)(player_id)
         draft = await database_sync_to_async(self.get_draft)()
 
-        # 找到當前要選的人
         current_unit = await database_sync_to_async(self.get_current_unit)(draft)
         if not current_unit or current_unit.player:
             return
 
-        # 驗證是不是這位用戶該選
         if current_unit.new_owner.owner != self.user:
             return
 
-        # 設定選擇內容
         current_unit.player = player
         current_unit.pick_at_time = now()
         await database_sync_to_async(current_unit.save)()
 
-        # 更新輪次與順位
         await database_sync_to_async(self.update_draft_position)(draft)
+
+        # 👉 新增：打包所有選秀進度
+        draft_units = await database_sync_to_async(self.serialize_draft_units)(draft)
 
         await self.channel_layer.group_send(
             self.group_name,
             {
                 'type': 'draft.pick',
-                'round': current_unit.round,
-                'pick': current_unit.pick,
-                'player_name': player.name,
+                'draft_units': draft_units,
                 'current_round': draft.current_round,
                 'current_pick': draft.current_pick,
                 'user_id': self.user.id,
@@ -96,9 +93,20 @@ class DraftConsumer(AsyncWebsocketConsumer):
                 draft.current_pick = unit.pick
                 draft.save()
                 return
-        # 選完了
         draft.is_complete = True
         draft.save()
+
+    def serialize_draft_units(self, draft):
+        return [
+            {
+                'round': unit.round,
+                'pick': unit.pick,
+                'ori_owner': unit.ori_owner.name,
+                'player': unit.player.name if unit.player else None,
+                'pick_time': unit.pick_at_time.strftime('%H:%M:%S') if unit.pick_at_time else '-'
+            }
+            for unit in DraftUnit.objects.filter(draft=draft).select_related('ori_owner', 'player')
+        ]
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -110,9 +118,7 @@ class DraftConsumer(AsyncWebsocketConsumer):
     async def draft_pick(self, event):
         await self.send(text_data=json.dumps({
             'type': 'pick',
-            'round': event['round'],
-            'pick': event['pick'],
-            'player_name': event['player_name'],
+            'draft_units': event['draft_units'],
             'current_round': event['current_round'],
             'current_pick': event['current_pick'],
             'user_id': event['user_id']
