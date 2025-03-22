@@ -94,7 +94,9 @@ def draft_room_view(request, league_id):
 @login_required
 @require_GET
 def draft_snapshot(request, draft_id):
+
     draft = get_object_or_404(DraftRoom, id=draft_id)
+    update_draft_position(draft)
     units = DraftUnit.objects.filter(draft=draft).select_related('ori_owner', 'new_owner', 'player').order_by('round', 'pick')
     picked_ids = [u.player.id for u in units if u.player]
     available_players = CPBLPlayer.objects.exclude(id__in=picked_ids).order_by('name')
@@ -112,6 +114,7 @@ def draft_snapshot(request, draft_id):
         "current_owner_color": current_unit.new_owner.color if current_unit else "#f0f0f0",
         "current_owner_text_color": current_unit.new_owner.text_color if current_unit else "#0f0f0f",
         "is_your_turn": current_unit and current_unit.new_owner.owner_id == request.user.id,
+        "is_complete": draft.is_complete,
         "units": group_units_by_round(units),
         "available_players": [
             {"id": p.id, "name": p.name, "main_pos": p.main_pos, 'team_id':p.team_id} for p in available_players
@@ -131,13 +134,41 @@ def group_units_by_round(units):
         })
     return [{"round": r, "picks": picks} for r, picks in grouped.items()]
 
+def update_draft_position(draft):
+    """自動更新目前輪次與順位（支援 snake 順序）"""
+    all_units = DraftUnit.objects.filter(draft=draft).order_by('round', 'pick')
+
+    grouped_units = {}
+    for unit in all_units:
+        grouped_units.setdefault(unit.round, []).append(unit)
+
+    # 依輪次排序，檢查每輪的順位是否有未選
+    for round_num in sorted(grouped_units.keys()):
+        units_in_round = grouped_units[round_num]
+
+        # 若是 snake 模式，偶數輪倒著選
+        if draft.draft_type == 'snake' and round_num % 2 == 0:
+            units_in_round = list(reversed(units_in_round))
+
+        for unit in units_in_round:
+            if not unit.player:
+                draft.current_round = unit.round
+                draft.current_pick = unit.pick
+                draft.save(update_fields=['current_round', 'current_pick'])
+                return
+
+    # 若都選完，標記完成
+    draft.is_complete = True
+    draft.save(update_fields=['is_complete'])
+
 @csrf_exempt
 @require_POST
 def pick_player_api(request):
     data = json.loads(request.body)
     draft = DraftRoom.objects.get(id=data['draft_id'])
     player = CPBLPlayer.objects.get(id=data['player_id'])
-
+    if draft.is_complete:
+        return JsonResponse({"status": "error", "message": "選秀已結束"}, status=403)
     unit = DraftUnit.objects.filter(
         draft=draft,
         round=draft.current_round,

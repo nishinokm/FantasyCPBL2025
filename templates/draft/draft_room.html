@@ -16,6 +16,9 @@
 {% block content %}
 <div class="container-fluid py-4">
   <div class="row">
+    <div id="draft-complete-banner" class="alert alert-success d-none">
+      🎉 選秀已完成！感謝各位參與！
+    </div>
     <div id="current-status" class="mb-3 fs-5 fw-bold text-primary">目前輪次：-，順位：-</div>
 
     <div class="col-lg-9">
@@ -88,6 +91,7 @@
 
 {% block extra_js %}
 <script>
+  let fetchSnapshotInterval = null;
   const STATIC_TEAM_BASE = "{% static 'assets/images/teams/' %}";
   const draftId = {{ draft.id }};
   const currentUserId = {{ request.user.id }};
@@ -100,7 +104,17 @@
         updateDraftProgress(data.units);
         updateAvailablePlayers(data.available_players);
         updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color, data.current_owner_text_color);
+
+        const completeBanner = document.getElementById('draft-complete-banner');
+        if (data.is_complete) {
+          completeBanner.classList.remove('d-none');
+          document.getElementById('hidden-can-send').value = "false";
+          if (fetchSnapshotInterval !== null) clearInterval(fetchSnapshotInterval);
+        } else {
+          completeBanner.classList.add('d-none');
+        }
       });
+
   }
 
   function updateDraftProgress(roundGroups) {
@@ -136,9 +150,15 @@
           const nameWithBreak = name.match(/.{1,5}/g)?.join('<br>') || name;
           const main_pos = pick.main_pos || '';
           const teamLogo = pick.team_id ? `<img src="${STATIC_TEAM_BASE}${pick.team_id}.png" style="width:16px;height:16px;" class="me-1">` : '';
-            cell.innerHTML = `<div style="font-size: medium;">${teamLogo} <small>${main_pos}</small><br>${nameWithBreak}</div>`;
+          cell.innerHTML = `<div style="font-size: medium;">${teamLogo} <small>${main_pos}</small><br>${nameWithBreak}</div>`;
           cell.style.backgroundColor = pick.color;
           cell.classList.add('text-white', 'fw-bold', 'text-center');
+
+          // Add flashing red border if it's the current pick
+          if (pick.is_current && group.round === data.current_round) {
+            cell.style.animation = "flash-border 1s infinite";
+            cell.style.border = "2px solid red";
+          }
         } else {
           cell.textContent = '-';
           cell.classList.add('text-muted', 'text-center');
@@ -292,12 +312,22 @@
         'X-CSRFToken': '{{ csrf_token }}'
       },
       body: JSON.stringify({ draft_id: draftId, player_id: selected.id })
-    }).then(fetchSnapshot);
+    }).then(response => {
+      if (!response.ok) {
+      alert("選擇失敗，請稍後再試！");
+      return;
+      }
+      fetchSnapshot();
+    }).catch(error => {
+      console.error("選擇過程中發生錯誤：", error);
+      alert("選擇過程中發生錯誤，請稍後再試！", error);
+    });
   }
 
 
   // 啟動輪詢與 WebSocket
-  setInterval(fetchSnapshot, 3000);
+  fetchSnapshotInterval = setInterval(fetchSnapshot, 3000);
+
   fetchSnapshot();
 
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
