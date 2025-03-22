@@ -1,18 +1,92 @@
+<!-- draft_room.html -->
 {% extends "layouts/base.html" %}
-{% block content %}
+{% load static %}
 
+{% block content %}
 <div class="container-fluid py-4">
-  <div class="card">
-    <div class="card-header bg-gradient-warning text-white">
-      <h5 class="mb-0"><i class="bi bi-joystick me-2"></i>{{ league.name }} - 選秀房</h5>
-      <p class="mb-0 small">選秀類型：{{ draft.get_draft_type_display }}</p>
+  <div class="row">
+    <!-- Draft Progress Panel -->
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">選秀進度 - {{ draft.league.name }}</h5>
+          <span>目前輪次：<strong>{{ draft.current_round }}</strong>，順位：<strong>{{ draft.current_pick }}</strong></span>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark text-center">
+              <tr>
+                <th>輪次</th>
+                <th>順位</th>
+                <th>原隊伍</th>
+                <th>球員</th>
+                <th>選擇時間</th>
+              </tr>
+            </thead>
+            <tbody id="draftTable">
+              {% for unit in draft_units %}
+                <tr class="text-center {% if unit.round == draft.current_round and unit.pick == draft.current_pick %}table-warning{% endif %}">
+                  <td>{{ unit.round }}</td>
+                  <td>{{ unit.pick }}</td>
+                  <td>{{ unit.ori_owner.name }}</td>
+                  <td>{% if unit.player %}{{ unit.player.name }}{% else %}<em class="text-muted">尚未選擇</em>{% endif %}</td>
+                  <td>{% if unit.pick_at_time %}{{ unit.pick_at_time|date:"H:i:s" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="card-body">
-      <p>目前輪數：<strong>{{ draft.current_round }}</strong></p>
-      <p>目前選秀順位：<strong>{{ draft.current_pick }}</strong></p>
-      <p>選秀狀態：{% if draft.is_complete %}<span class="text-success">已完成</span>{% else %}<span class="text-danger">進行中</span>{% endif %}</p>
+
+    <!-- Chat Box -->
+    <div class="col-lg-4">
+      <div class="card shadow">
+        <div class="card-header bg-gradient-info text-white">
+          <h6 class="mb-0">聊天室</h6>
+        </div>
+        <div class="card-body" id="chat-box" style="height: 400px; overflow-y: auto;">
+          <!-- chat messages will appear here -->
+        </div>
+        <div class="card-footer p-2">
+          <div class="input-group">
+            <input type="text" id="chat-message" class="form-control" placeholder="輸入訊息...">
+            <button id="send-btn" class="btn btn-info">送出</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const chatSocket = new WebSocket(
+    protocol + '://' + window.location.host + '/ws/draft/{{ draft.id }}/'
+  );
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const chatBox = document.getElementById('chat-box');
+    const message = document.createElement('div');
+    message.innerHTML = `<strong>${data.user}：</strong> ${data.message}`;
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('聊天連線中斷');
+  };
+
+  document.getElementById('send-btn').onclick = function(e) {
+    const input = document.getElementById('chat-message');
+    const message = input.value;
+    if (message.trim()) {
+      chatSocket.send(JSON.stringify({ 'message': message }));
+      input.value = '';
+    }
+  };
+</script>
 {% endblock %}

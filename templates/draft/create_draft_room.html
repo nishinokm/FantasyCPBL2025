@@ -33,31 +33,27 @@
 
         <hr>
         <h6 class="mt-4">1️⃣ 請調整選秀順位</h6>
-        <p class="text-muted">使用上下箭頭決定第一輪的選秀順序。</p>
+        <p class="text-muted">選擇每支隊伍的選秀順位：</p>
 
-        <ul id="teamOrderList" class="list-group mb-4">
+        <div class="row mb-4">
           {% for team in teams %}
-            <li class="list-group-item d-flex justify-content-between align-items-center" data-team-id="{{ team.id }}">
-              <div class="d-flex align-items-center">
-                <span class="order-number me-3 fw-bold">#{{ forloop.counter }}</span>
-                <span>{{ team.name }}</span>
-              </div>
-              <div>
-                <button type="button" class="btn btn-sm btn-outline-secondary me-1 btn-up">↑</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-down">↓</button>
-              </div>
-              <input type="hidden" name="draft_order" value="{{ team.id }}">
-            </li>
+          <div class="col-md-6 mb-2">
+            <label class="form-label">{{ team.name }}</label>
+            <select name="draft_order" class="form-select">
+              {% for i in total_range %}
+                <option value="{{ team.id }}" {% if forloop.counter == i %}selected{% endif %}>第 {{ i }} 順位</option>
+              {% endfor %}
+            </select>
+          </div>
           {% endfor %}
-        </ul>
+        </div>
 
         {% if order_error %}
-          <div class="alert alert-danger">請排序所有隊伍後再提交。</div>
+          <div class="alert alert-danger">請為每支隊伍選擇不同的順位。</div>
         {% endif %}
 
         <hr class="my-4">
         <h6 class="mb-3">📝 預先建立多筆選秀順位</h6>
-        <!-- 預選順位 -->
         <div id="formset-container">
             {{ formset.management_form }}
             {% for form in formset %}
@@ -77,23 +73,22 @@
             </div>
             {% endfor %}
         </div>
-        
-        <!-- 隱藏模板 -->
+
         <div id="empty-form-template" class="d-none">
-            <div class="card mb-2 predraft-form">
+          <div class="card mb-2 predraft-form">
             <div class="card-body row align-items-end">
-                {% for field in formset.empty_form.visible_fields %}
+              {% for field in formset.empty_form.visible_fields %}
                 <div class="col-md-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
+                  <label class="form-label">{{ field.label }}</label>
+                  {{ field }}
                 </div>
-                {% endfor %}
-                <div class="col-md-1">
+              {% endfor %}
+              <div class="col-md-1">
                 <label>&nbsp;</label><br>
                 <button type="button" class="btn btn-outline-danger btn-sm remove-form">刪除</button>
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
 
         <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="add-form">➕ 新增一筆預選順位</button>
@@ -111,31 +106,31 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const addFormBtn = document.getElementById('add-form');
-        const formContainer = document.getElementById('formset-container');
-        const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
-        const emptyTemplate = document.getElementById('empty-form-template').innerHTML;
-      
-        addFormBtn.addEventListener('click', () => {
-          const currentFormCount = parseInt(totalForms.value);
-          const newFormHtml = emptyTemplate.replace(/__prefix__/g, currentFormCount);
-          const temp = document.createElement('div');
-          temp.innerHTML = newFormHtml;
-          formContainer.appendChild(temp.firstElementChild);
-          totalForms.value = currentFormCount + 1;
-        });
-      
-        formContainer.addEventListener('click', function (e) {
-          if (e.target.classList.contains('remove-form')) {
-            const card = e.target.closest('.predraft-form');
-            if (card) {
-              card.remove();
-              const count = formContainer.querySelectorAll('.predraft-form').length;
-              totalForms.value = count;
-            }
-          }
-        });
-      });
+  document.addEventListener("DOMContentLoaded", function () {
+    const addFormBtn = document.getElementById('add-form');
+    const formContainer = document.getElementById('formset-container');
+    const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
+    const emptyTemplate = document.getElementById('empty-form-template').innerHTML;
+
+    addFormBtn.addEventListener('click', () => {
+      const currentFormCount = parseInt(totalForms.value);
+      const newFormHtml = emptyTemplate.replace(/__prefix__/g, currentFormCount);
+      const temp = document.createElement('div');
+      temp.innerHTML = newFormHtml;
+      formContainer.appendChild(temp.firstElementChild);
+      totalForms.value = currentFormCount + 1;
+    });
+
+    formContainer.addEventListener('click', function (e) {
+      if (e.target.classList.contains('remove-form')) {
+        const card = e.target.closest('.predraft-form');
+        if (card) {
+          card.remove();
+          const count = formContainer.querySelectorAll('.predraft-form').length;
+          totalForms.value = count;
+        }
+      }
+    });
+  });
 </script>
 {% endblock %}
