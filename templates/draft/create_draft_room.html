@@ -1,4 +1,8 @@
 {% extends "layouts/base.html" %}
+{% block extrastyle %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock extrastyle %}
+
 {% block content %}
 
 <div class="container py-4">
@@ -108,6 +112,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const list = document.getElementById("sortableTeams");
@@ -120,21 +125,30 @@
     }
 
     list.addEventListener("click", function (e) {
+      const li = e.target.closest("li");
+      if (!li) return;
+
       if (e.target.classList.contains("btn-up")) {
-        const li = e.target.closest("li");
         const prev = li.previousElementSibling;
         if (prev) list.insertBefore(li, prev);
       } else if (e.target.classList.contains("btn-down")) {
-        const li = e.target.closest("li");
         const next = li.nextElementSibling;
         if (next) list.insertBefore(next, li);
       }
+
       updateOrderNumbers();
+    });
+
+    // 拖曳排序
+    $("#sortableTeams").sortable({
+      update: function () {
+        updateOrderNumbers();
+      }
     });
 
     updateOrderNumbers();
 
-    // 預選表單新增與刪除
+    // --------- 表單動態新增與刪除 ----------
     const addFormBtn = document.getElementById('add-form');
     const formContainer = document.getElementById('formset-container');
     const totalForms = document.querySelector('#id_form-TOTAL_FORMS');
