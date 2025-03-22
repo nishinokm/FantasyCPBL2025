@@ -10,6 +10,12 @@
     text-align: center;
     vertical-align: middle;
   }
+
+  @keyframes flash-border {
+    0% { border-color: red; }
+    50% { border-color: transparent; }
+    100% { border-color: red; }
+  }
 </style>
 {% endblock %}
 
@@ -101,7 +107,7 @@
     fetch(`/draft/${draftId}/snapshot/`)
       .then(res => res.json())
       .then(data => {
-        updateDraftProgress(data.units);
+        updateDraftProgress(data.units,data.current_round, data.current_pick);
         updateAvailablePlayers(data.available_players);
         updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn, data.current_owner, data.current_owner_color, data.current_owner_text_color);
 
@@ -117,7 +123,7 @@
 
   }
 
-  function updateDraftProgress(roundGroups) {
+  function updateDraftProgress(roundGroups, currentRound, currentPick) {
     const table = document.getElementById('draft-progress-body');
     const headerRow = document.getElementById('draft-header-row');
     table.innerHTML = '';
@@ -155,7 +161,7 @@
           cell.classList.add('text-white', 'fw-bold', 'text-center');
 
           // Add flashing red border if it's the current pick
-          if (pick.is_current && group.round === data.current_round) {
+          if (group.round === currentRound && i + 1 === currentPick) {
             cell.style.animation = "flash-border 1s infinite";
             cell.style.border = "2px solid red";
           }
