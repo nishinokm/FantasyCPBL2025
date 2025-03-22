@@ -134,8 +134,9 @@
         if (pick) {
           const name = pick.player;
           const nameWithBreak = name.match(/.{1,5}/g)?.join('<br>') || name;
+          const main_pos = pick.main_pos || '';
           const teamLogo = pick.team_id ? `<img src="${STATIC_TEAM_BASE}${pick.team_id}.png" style="width:16px;height:16px;" class="me-1">` : '';
-          cell.innerHTML = teamLogo + nameWithBreak;
+            cell.innerHTML = `<div style="font-size: medium;">${teamLogo} <small>${main_pos}</small><br>${nameWithBreak}</div>`;
           cell.style.backgroundColor = pick.color;
           cell.classList.add('text-white', 'fw-bold', 'text-center');
         } else {

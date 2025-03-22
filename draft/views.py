@@ -96,14 +96,13 @@ def draft_room_view(request, league_id):
 def draft_snapshot(request, draft_id):
     draft = get_object_or_404(DraftRoom, id=draft_id)
     units = DraftUnit.objects.filter(draft=draft).select_related('ori_owner', 'new_owner', 'player').order_by('round', 'pick')
-
     picked_ids = [u.player.id for u in units if u.player]
     available_players = CPBLPlayer.objects.exclude(id__in=picked_ids).order_by('name')
 
     current_unit = DraftUnit.objects.filter(
         draft=draft,
         round=draft.current_round,
-        pick=draft.current_pick
+        pick=draft.current_pick,
     ).select_related('new_owner__owner').first()
     
     return JsonResponse({
@@ -118,6 +117,7 @@ def draft_snapshot(request, draft_id):
             {"id": p.id, "name": p.name, "main_pos": p.main_pos, 'team_id':p.team_id} for p in available_players
         ]
     })
+
 def group_units_by_round(units):
     grouped = defaultdict(list)
     for u in units:
@@ -126,7 +126,8 @@ def group_units_by_round(units):
             "team_id": u.player.team_id if u.player else None,
             "color": u.new_owner.color if u.new_owner.color else "#ffffff",
             "text_color": u.new_owner.text_color if u.new_owner.text_color else "#000000",
-            "owner": u.new_owner.name
+            "owner": u.new_owner.name,
+            'main_pos': u.player.main_pos if u.player else "-"
         })
     return [{"round": r, "picks": picks} for r, picks in grouped.items()]
 
