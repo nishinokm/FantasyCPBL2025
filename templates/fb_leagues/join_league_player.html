@@ -1,4 +1,25 @@
 {% extends "layouts/base.html" %}
+{% block extrastyle %}
+<style>
+  .team-badge {
+    display: inline-block;
+    padding: 12px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    background-color: var(--bg-color, #cccccc);
+    color: var(--text-color, #000000);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+  }
+
+  .team-badge:hover {
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5 text-center">
   <h3>{{ league.name }}</h3>
@@ -23,8 +44,34 @@
       <input type="color" name="team_text_color" id="team_text_color" class="form-control form-control-color border border-dark" value="#FFFFFF" title="選擇隊伍文字顏色">
     </div>
     
+    <div class="mb-3 col-md-6 offset-md-3 text-start">
+      <label class="form-label">顏色預覽</label><br>
+      <div id="teamPreview" class="team-badge mt-2">
+        隊伍預覽
+      </div>
+    </div>
+
     <button class="btn btn-primary mt-3">加入聯盟</button>
     <a href="{% url 'index' %}" class="btn btn-secondary mt-3">取消</a>
   </form>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const preview = document.getElementById("teamPreview");
+    const bgColorInput = document.getElementById("team_color");
+    const textColorInput = document.getElementById("team_text_color");
+
+    function updatePreview() {
+      preview.style.setProperty('--bg-color', bgColorInput.value);
+      preview.style.setProperty('--text-color', textColorInput.value);
+    }
+
+    bgColorInput.addEventListener("input", updatePreview);
+    textColorInput.addEventListener("input", updatePreview);
+
+    updatePreview();  // 初始化一次
+  });
+</script>
 {% endblock %}

@@ -3,6 +3,25 @@ from django.urls import reverse
 from .models import LeagueMembership, League, FantasyTeam
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+
+@csrf_exempt
+@login_required
+def update_team_color(request, league_id):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        team = FantasyTeam.objects.filter(league__league_id=league_id, owner=request.user).first()
+        if not team:
+            return JsonResponse({'error': '找不到對應的隊伍'}, status=404)
+
+        team.color = data.get('color', team.color)
+        team.text_color = data.get('text_color', team.text_color)
+        team.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
 
 def resolve_invite_token(token):
     for role in ['mod', 'player', 'viewer']:

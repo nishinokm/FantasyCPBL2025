@@ -38,17 +38,23 @@
             <a href="{{ invite_links.player }}" class="btn btn-sm btn-success shadow-sm text-center d-flex align-items-center justify-content-center mb-1">加入聯盟</a>
             {% else %}
             {% if user_role == "owner" %}
+            <button class="btn p-0 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#editTeamColorModal">
               <span class="btn btn-sm btn-danger text-white shadow-sm d-flex align-items-center justify-content-center">
               <i class="bi bi-star-fill me-1 align-middle fs-5"></i> <span class="align-middle fs-5 mb-1">擁有者</span>
               </span>
+            </button>
             {% elif user_role == "mod" %}
+            <button class="btn p-0 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#editTeamColorModal">
               <span class="btn btn-sm btn-warning text-dark shadow-sm d-flex align-items-center justify-content-center">
               <i class="bi bi-shield-lock-fill me-1 align-middle fs-5"></i> <span class="align-middle fs-5 mb-1">管理員</span>
               </span>
+            </button>
             {% elif user_role == "player" %}
+            <button class="btn p-0 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#editTeamColorModal">
               <span class="btn btn-sm btn-success text-white shadow-sm d-flex align-items-center justify-content-center">
               <i class="bi bi-controller me-1 align-middle fs-5"></i> <span class="align-middle fs-5 mb-1">玩家</span>
               </span>
+            </button>
             {% elif user_role == "viewer" %}
               <span class="btn btn-sm btn-secondary text-white shadow-sm d-flex align-items-center justify-content-center">
               <i class="bi bi-eye me-1 align-middl fs-5e"></i> <span class="align-middle fs-5 mb-1">旁觀者</span>
@@ -183,6 +189,37 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="editTeamColorModal" tabindex="-1" aria-labelledby="colorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="teamColorForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="colorModalLabel">編輯隊伍顏色</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="bgColor" class="form-label">背景顏色</label>
+              <input type="color" id="bgColor" name="color" class="form-control form-control-color">
+            </div>
+            <div class="mb-3">
+              <label for="textColor" class="form-label">文字顏色</label>
+              <input type="color" id="textColor" name="text_color" class="form-control form-control-color">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">預覽效果</label><br>
+              <div id="colorPreview" class="team-badge mt-2">
+                預覽隊名
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">儲存變更</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>  
 </div>
 
 {% endblock %}
@@ -207,6 +244,44 @@
       alert("複製失敗：" + err);
     });
   }
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("teamColorForm");
+    const preview = document.getElementById("colorPreview");
+    const bgInput = document.getElementById("bgColor");
+    const textInput = document.getElementById("textColor");
+
+    function updatePreview() {
+      preview.style.setProperty('--bg-color', bgInput.value);
+      preview.style.setProperty('--text-color', textInput.value);
+    }
+
+    bgInput.addEventListener("input", updatePreview);
+    textInput.addEventListener("input", updatePreview);
+
+    updatePreview(); 
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      fetch("{% url 'update_team_color' league.league_id %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          color: document.getElementById("bgColor").value,
+          text_color: document.getElementById("textColor").value
+        })
+      }).then(res => {
+        if (res.ok) {
+          location.reload();  // 重新整理頁面套用新顏色
+        } else {
+          alert("更新失敗！");
+        }
+      });
+    });
+  });
 </script>
 
 {% endblock extra_js %}
