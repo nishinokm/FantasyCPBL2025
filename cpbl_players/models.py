@@ -5,7 +5,7 @@ from django.db import models
 class CPBLPlayer(models.Model):
     player_id = models.PositiveIntegerField(unique=True)  # 從 10001 開始，需在資料庫層面設定初始值
     team_id = models.PositiveIntegerField()
-    jersey_number = models.CharField(max_length=10, unique=True)
+    jersey_number = models.CharField(max_length=10)
     name = models.CharField(max_length=100)
     isForeign = models.BooleanField(default=False)
     isRookie = models.BooleanField(default=True)

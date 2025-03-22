@@ -4,54 +4,42 @@
 {% block content %}
 <div class="container-fluid py-4">
   <div class="row">
-    <!-- Draft Progress Panel -->
+    <!-- Draft Main Panel -->
     <div class="col-lg-8">
-      <div class="card shadow">
-        <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">選秀進度 - {{ draft.league.name }}</h5>
-          <span id="current-status">目前輪次：<strong>{{ draft.current_round }}</strong>，順位：<strong>{{ draft.current_pick }}</strong></span>
-        </div>
+      <div id="current-status" class="mb-3 fs-5 fw-bold text-primary">目前輪次：-，順位：-</div>
+
+      <!-- 已選名單 -->
+      <div class="card mb-3">
+        <div class="card-header bg-primary text-white">已選球員</div>
         <div class="card-body p-0">
-          <table class="table table-striped table-hover mb-0">
-            <thead class="table-dark text-center">
-              <tr>
-                <th>輪次</th>
-                <th>順位</th>
-                <th>原隊伍</th>
-                <th>球員</th>
-                <th>選擇時間</th>
-              </tr>
-            </thead>
-            <tbody id="draftTable">
-              {% for unit in draft_units %}
-                <tr id="unit-{{ unit.round }}-{{ unit.pick }}" class="text-center {% if unit.round == draft.current_round and unit.pick == draft.current_pick %}table-warning{% endif %}">
-                  <td>{{ unit.round }}</td>
-                  <td>{{ unit.pick }}</td>
-                  <td>{{ unit.ori_owner.name }}</td>
-                  <td class="player-cell">{% if unit.player %}{{ unit.player.name }}{% else %}<em class="text-muted">尚未選擇</em>{% endif %}</td>
-                  <td>{% if unit.pick_at_time %}{{ unit.pick_at_time|date:"H:i:s" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
+          <table class="table table-striped mb-0">
+            <thead><tr><th>輪次</th><th>順位</th><th>原隊伍</th><th>球員</th><th>時間</th></tr></thead>
+            <tbody id="draft-progress-body"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- 預排提示區塊 -->
-      <div class="alert alert-info mt-3 d-none" id="pick-alert">
-        🎯 該你選了！請從預排球員中選擇或手動指派！
-        <form id="pick-form" class="mt-2">
-          <select id="pick-player-select" class="form-select mb-2">
-            {% for player in available_players %}
-              <option value="{{ player.id }}">{{ player.name }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn btn-success">確定選擇</button>
-        </form>
+      <!-- 預排清單 -->
+      <div class="card mb-3">
+        <div class="card-header bg-success text-white">預排清單</div>
+        <div class="card-body">
+          <ul class="list-group" id="pre-draft-queue"></ul>
+          <div id="pick-action" class="mt-3 d-none">
+            <button class="btn btn-success" id="submit-pick-btn">送出本輪預排選手</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 可選球員 -->
+      <div class="card">
+        <div class="card-header bg-secondary text-white">尚未被選的球員</div>
+        <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+          <ul class="list-group list-group-flush" id="available-player-list"></ul>
+        </div>
       </div>
     </div>
 
-    <!-- Chat Box -->
+    <!-- 聊天區塊 -->
     <div class="col-lg-4">
       <div class="card shadow">
         <div class="card-header bg-gradient-info text-white">
@@ -72,54 +60,117 @@
 
 {% block extra_js %}
 <script>
+  const draftId = {{ draft.id }};
+  const currentUserId = {{ request.user.id }};
+  let preDraftQueue = [];
+
+  function fetchSnapshot() {
+    fetch(`/draft/${draftId}/snapshot/`)
+      .then(res => res.json())
+      .then(data => {
+        updateDraftProgress(data.units);
+        updateAvailablePlayers(data.available_players);
+        updateCurrentStatus(data.current_round, data.current_pick, data.is_your_turn);
+      });
+  }
+
+  function updateDraftProgress(units) {
+    const table = document.getElementById('draft-progress-body');
+    table.innerHTML = '';
+    units.forEach(unit => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${unit.round}</td>
+        <td>${unit.pick}</td>
+        <td>${unit.ori_owner}</td>
+        <td>${unit.player || '<em class="text-muted">尚未選擇</em>'}</td>
+        <td>${unit.pick_time || '-'}</td>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  function updateAvailablePlayers(players) {
+    const list = document.getElementById('available-player-list');
+    list.innerHTML = '';
+    players.forEach(p => {
+      const item = document.createElement('li');
+      item.classList.add('list-group-item', 'd-flex', 'justify-content-between');
+      item.innerHTML = `
+        <span>${p.name}</span>
+        <button class="btn btn-sm btn-outline-primary" onclick="addToQueue(${p.id}, '${p.name}')">預排</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function updateCurrentStatus(round, pick, isYourTurn) {
+    const status = document.getElementById('current-status');
+    status.innerHTML = `目前輪次：<strong>${round}</strong>，順位：<strong>${pick}</strong>`;
+    const actionBlock = document.getElementById('pick-action');
+    actionBlock.classList.toggle('d-none', !(isYourTurn && preDraftQueue.length > 0));
+  }
+
+  function addToQueue(id, name) {
+    if (!preDraftQueue.find(p => p.id === id)) {
+      preDraftQueue.push({ id, name });
+      updateQueueUI();
+    }
+  }
+
+  function removeFromQueue(index) {
+    preDraftQueue.splice(index, 1);
+    updateQueueUI();
+  }
+
+  function updateQueueUI() {
+    const queueEl = document.getElementById('pre-draft-queue');
+    queueEl.innerHTML = '';
+    preDraftQueue.forEach((player, index) => {
+      const item = document.createElement('li');
+      item.classList.add('list-group-item', 'd-flex', 'justify-content-between');
+      item.innerHTML = `
+        <span>${player.name}</span>
+        <button class="btn btn-sm btn-danger" onclick="removeFromQueue(${index})">移除</button>
+      `;
+      queueEl.appendChild(item);
+    });
+  }
+
+  document.getElementById('submit-pick-btn').onclick = function () {
+    if (preDraftQueue.length === 0) return;
+    const selected = preDraftQueue.shift();
+    updateQueueUI();
+    fetch(window.location.origin + '/draft/draft_pick_api/', {
+      method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify({ draft_id: draftId, player_id: selected.id })
+    }).then(fetchSnapshot);
+  };
+
+  // 啟動輪詢
+  setInterval(fetchSnapshot, 3000);
+  fetchSnapshot();
+
+  // WebSocket for chat only
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   const socket = new WebSocket(protocol + '://' + window.location.host + '/ws/draft/{{ draft.id }}/');
 
   socket.onmessage = function(e) {
     const data = JSON.parse(e.data);
-
     if (data.type === 'chat') {
       const chatBox = document.getElementById('chat-box');
       const message = document.createElement('div');
       message.innerHTML = `<strong>${data.user}：</strong> ${data.message}`;
       chatBox.appendChild(message);
       chatBox.scrollTop = chatBox.scrollHeight;
-    } else if (data.type === 'pick') {
-      const tableBody = document.getElementById('draftTable');
-      tableBody.innerHTML = ''; // 清空原本表格
-    
-      data.draft_units.forEach(unit => {
-        const row = document.createElement('tr');
-        row.classList.add('text-center');
-        if (unit.round === data.current_round && unit.pick === data.current_pick) {
-          row.classList.add('table-warning');
-        }
-        row.id = `unit-${unit.round}-${unit.pick}`;
-        row.innerHTML = `
-          <td>${unit.round}</td>
-          <td>${unit.pick}</td>
-          <td>${unit.ori_owner}</td>
-          <td class="player-cell">${unit.player || '<em class="text-muted">尚未選擇</em>'}</td>
-          <td>${unit.pick_time}</td>
-        `;
-        tableBody.appendChild(row);
-      });
-    
-      const currentStatusEl = document.getElementById('current-status');
-      currentStatusEl.innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>`;
-    
-      if (data.user_id === {{ request.user.id }}) {
-        document.getElementById('pick-alert').classList.remove('d-none');
-      } else {
-        document.getElementById('pick-alert').classList.add('d-none');
-      }
     }
   };
-  socket.onclose = function(e) {
-    console.error('聊天連線中斷');
-  };
-
-  document.getElementById('send-btn').onclick = function(e) {
+  socket.onclose = function(e) { console.error('聊天連線中斷'); };
+  document.getElementById('send-btn').onclick = function() {
     const input = document.getElementById('chat-message');
     const message = input.value;
     if (message.trim()) {
@@ -127,27 +178,5 @@
       input.value = '';
     }
   };
-
-  document.getElementById('pick-form').onsubmit = function(e) {
-    e.preventDefault();
-    const selected = document.getElementById('pick-player-select').value;
-    socket.send(JSON.stringify({ type: 'pick', player_id: selected }));
-    document.getElementById('pick-alert').classList.add('d-none');
-  };
-  // 每 10 秒檢查選秀進度，補強 WebSocket 中斷或延遲
-  setInterval(() => {
-    fetch("{% url 'draft_status' draft.id %}")
-      .then(response => response.json())
-      .then(data => {
-        const currentStatusEl = document.getElementById('current-status');
-        currentStatusEl.innerHTML = `目前輪次：<strong>${data.current_round}</strong>，順位：<strong>${data.current_pick}</strong>，由 <strong>${data.current_owner}</strong> 選擇`;
-        console.log("Current Status:", currentStatusEl.innerHTML);
-        if (data.is_your_turn) {
-          document.getElementById('pick-alert').classList.remove('d-none');
-        } else {
-          document.getElementById('pick-alert').classList.add('d-none');
-        }
-      });
-  }, 10000);
 </script>
 {% endblock %}
